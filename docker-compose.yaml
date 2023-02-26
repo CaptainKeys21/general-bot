@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  logger-db:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - log-data:/data/db
+    env_file:
+      - ./config/mongod.env
+
+volumes:
+  log-data: {}
+    

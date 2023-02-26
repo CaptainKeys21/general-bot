@@ -15,6 +15,7 @@ use serenity::{
 };
 
 use crate::services::commands::CommandManager;
+use crate::services::mongodb::Mongodb;
 use lru_cache::LruCache;
 
 /** Caching **/
@@ -52,6 +53,11 @@ impl TypeMapKey for CommandCache {
     type Value = Arc<RwLock<CommandManager>>;
 }
 
+pub struct DatabaseCache;
+impl TypeMapKey for DatabaseCache {
+    type Value = Mongodb;
+}
+
 pub async fn fill(
     data: Arc<RwLock<TypeMap>>,
     prefix: &str,
@@ -69,6 +75,9 @@ pub async fn fill(
 
     let commands = CommandManager::new();
     data.insert::<CommandCache>(Arc::new(RwLock::new(commands)));
+
+    let database = Mongodb::new().await;
+    data.insert::<DatabaseCache>(database);
 
     Ok(())
 }

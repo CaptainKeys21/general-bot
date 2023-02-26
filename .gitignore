@@ -16,3 +16,4 @@ Cargo.lock
 
 #Sensitive data
 .env
+*.env

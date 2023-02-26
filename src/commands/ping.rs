@@ -14,9 +14,15 @@ use serenity::{
 
 
 use std::time::Instant;
+use crate::{services::mongodb::Mongodb, cache::DatabaseCache};
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
+    {
+        let data = ctx.data.read().await;
+        let database = data.get::<DatabaseCache>().expect("Expect object database");
+    }
+
     let old = Instant::now();
     let mut m = msg.channel_id.say(&ctx.http, "Pong!\n...").await?;
     let new = Instant::now();
