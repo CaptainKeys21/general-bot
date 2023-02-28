@@ -6,21 +6,26 @@ use serenity::{
     },
     model::{
         prelude::*,
-        interactions::application_command::ApplicationCommandInteraction,
-        application::interaction::InteractionResponseType::ChannelMessageWithSource
+        application::interaction::{
+            InteractionResponseType::ChannelMessageWithSource,
+            application_command::ApplicationCommandInteraction,
+        }
     },
     prelude::*,
 };
 
 
 use std::time::Instant;
-use crate::{services::mongodb::Mongodb, cache::DatabaseCache};
+use crate::cache::LoggerCache;
+use crate::services::logger::LogType;
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     {
         let data = ctx.data.read().await;
-        let database = data.get::<DatabaseCache>().expect("Expect object database");
+        let logger = data.get::<LoggerCache>().expect("Expect object database").read().await;
+
+        logger.default(LogType::Info, "teste", false).await?;
     }
 
     let old = Instant::now();

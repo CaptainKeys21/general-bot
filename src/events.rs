@@ -2,9 +2,11 @@ use serenity::{
     async_trait,
     framework::{standard::macros::hook, standard::CommandResult, standard::DispatchError},
     model::{
-        channel::Message, channel::ReactionType, event::MessageUpdateEvent, gateway::Ready,
-        guild::Guild, id::ChannelId, id::GuildId, id::MessageId, interactions::Interaction,
+        channel::Message, channel::ReactionType, event::MessageUpdateEvent, 
+        guild::Guild, id::ChannelId, id::GuildId, id::MessageId,
+        application::interaction::Interaction,
         prelude::UnavailableGuild,
+        gateway::Ready,
     },
     prelude::*,
     

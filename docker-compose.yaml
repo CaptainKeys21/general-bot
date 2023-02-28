@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   logger-db:
-    image: mongo
+    build: ./mongo/
     restart: always
     ports:
       - 27017:27017
@@ -13,4 +13,7 @@ services:
 
 volumes:
   log-data: {}
+
+# networks:
+
     
