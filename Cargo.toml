@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serenity = "0.11"
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread"] }
 dotenv = "0.15.0"
 reqwest = '0.11.14'
@@ -15,3 +14,20 @@ lru-cache = "0.1"
 openssl = { version = "0.10", features = ["vendored"] }
 chrono = "0.4.23"
 mongodb = "2.3.1"
+bson = { version = "2.5.0", features = ["chrono-0_4"]}
+
+[dependencies.serenity]
+version = "0.11"
+default-features = false
+features = [
+    "collector", 
+    "gateway", 
+    "builder", 
+    "standard_framework", 
+    "http", 
+    "model", 
+    "client", 
+    "framework", 
+    "utils", 
+    "rustls_backend"
+]

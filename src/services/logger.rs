@@ -1,4 +1,4 @@
-use mongodb::bson::doc;
+use mongodb::bson::{doc, DateTime};
 use std::fmt::{Display, Formatter, Result};
 use chrono::Utc;
 use crate::services::mongodb::Mongodb;
@@ -30,13 +30,13 @@ impl Logger {
         Logger { database }
     }
 
-    pub async fn default(&self, level: LogType, msg: &str, print_line: bool) -> Result {
+    pub async fn default(&self, level: LogType, msg: &str, print_line: bool) {
         let date_now = Utc::now();
 
         let data = doc! {
             "type": level.to_string(),
             "message": msg,
-            "time": date_now.timestamp(),
+            "time": DateTime::from_chrono(date_now),
         };
 
         if print_line {
@@ -46,7 +46,24 @@ impl Logger {
         if let Err(e) = self.database.insert_one("logger", "default", data).await {
             panic!("{}", e)
         }
+    }
 
-        Ok(())
+    pub async fn command(&self, level: LogType, cmd_name: &str, msg: &str, print_line: bool) {
+        let date_now = Utc::now();
+
+        let data = doc! {
+            "type": level.to_string(),
+            "command": cmd_name,
+            "message": msg,
+            "time": DateTime::from_chrono(date_now),
+        };
+
+        if print_line {
+            println!("{} | [{} | {}] => {}", date_now.timestamp(), level.to_string(), cmd_name, msg);
+        }
+
+        if let Err(e) = self.database.insert_one("logger", "commands", data).await {
+            panic!("{}", e)
+        }
     }
 }

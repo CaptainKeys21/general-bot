@@ -16,18 +16,9 @@ use serenity::{
 
 
 use std::time::Instant;
-use crate::cache::LoggerCache;
-use crate::services::logger::LogType;
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    {
-        let data = ctx.data.read().await;
-        let logger = data.get::<LoggerCache>().expect("Expect object database").read().await;
-
-        logger.default(LogType::Info, "teste", false).await?;
-    }
-
     let old = Instant::now();
     let mut m = msg.channel_id.say(&ctx.http, "Pong!\n...").await?;
     let new = Instant::now();

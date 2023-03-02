@@ -2,6 +2,7 @@ mod commands;
 mod services;
 mod cache;
 mod events;
+mod utils;
 
 use serenity::{
     framework::{
@@ -20,10 +21,11 @@ use std::{
 
 use crate::commands::{
     ping::*,
+    info::*,
 };
 
 #[group]
-#[commands(ping)]
+#[commands(ping, info)]
 struct General;
 
 #[tokio::main]
@@ -64,6 +66,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let framework = StandardFramework::new()
         .configure(|c| c.owners(owners).prefix(&prefix))
+        .before(events::before)
+        .after(events::after)
         .group(&GENERAL_GROUP)
         .bucket("nospam", |b| b.delay(3).time_span(10).limit(3))
         .await;

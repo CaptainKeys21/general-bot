@@ -1,24 +1,18 @@
 use serenity::{
     async_trait,
-    framework::{standard::macros::hook, standard::CommandResult, standard::DispatchError},
+    framework::{standard::macros::hook, standard::CommandResult},
     model::{
-        channel::Message, channel::ReactionType, event::MessageUpdateEvent, 
-        guild::Guild, id::ChannelId, id::GuildId, id::MessageId,
+        channel::Message, 
         application::interaction::Interaction,
-        prelude::UnavailableGuild,
         gateway::Ready,
     },
     prelude::*,
     
 };
-use std::env;
-
-use tokio::sync::MutexGuard;
-
-use chrono::{DateTime, Utc};
 
 use crate::{
-    cache::*, commands,
+    cache::*,
+    services::logger::LogType,
 };
 
 pub struct Handler;
@@ -59,4 +53,21 @@ impl EventHandler for Handler {
             }
         }
     }
+}
+
+#[hook]
+pub async fn before(ctx: &Context, _msg: &Message, command_name: &str) -> bool {
+    let data = ctx.data.read().await;
+    let log = data.get::<LoggerCache>().unwrap().read().await;
+    log.command(LogType::Info, command_name, "START", true).await;
+
+    true
+}
+
+#[hook]
+pub async fn after(ctx: &Context, _msg: &Message, command_name: &str, _command_result: CommandResult) {
+    let data = ctx.data.read().await;
+    let log = data.get::<LoggerCache>().unwrap().read().await;
+    log.command(LogType::Info, command_name, "END", true).await;
+
 }

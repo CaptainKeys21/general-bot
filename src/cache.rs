@@ -84,7 +84,9 @@ pub async fn fill(
 
 
     let database = Mongodb::new().await;
-    let logger = Logger::new(database);
+    data.insert::<DatabaseCache>(Arc::new(RwLock::new(database.clone())));
+
+    let logger = Logger::new(database.clone());
     data.insert::<LoggerCache>(Arc::new(RwLock::new(logger)));
 
     Ok(())

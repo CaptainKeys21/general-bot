@@ -4,6 +4,8 @@ use mongodb::{
     Client
 };
 
+
+#[derive(Clone)]
 pub struct Mongodb {
     client: Client,
 }
