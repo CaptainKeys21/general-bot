@@ -43,7 +43,7 @@ impl Logger {
             println!("{} | [{}] => {}", date_now.timestamp(), level.to_string(), msg);
         }
 
-        if let Err(e) = self.database.insert_one("logger", "default", data).await {
+        if let Err(e) = self.database.insert_one("Logger", "default", data).await {
             panic!("{}", e)
         }
     }
@@ -62,7 +62,7 @@ impl Logger {
             println!("{} | [{} | {}] => {}", date_now.timestamp(), level.to_string(), cmd_name, msg);
         }
 
-        if let Err(e) = self.database.insert_one("logger", "commands", data).await {
+        if let Err(e) = self.database.insert_one("Logger", "commands", data).await {
             panic!("{}", e)
         }
     }

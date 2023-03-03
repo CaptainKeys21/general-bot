@@ -1,7 +1,10 @@
-use mongodb::error::Error;
+use bson::doc;
+use futures::{StreamExt};
 use mongodb::{
     bson::Document,
-    Client
+    error:: Error,
+    options::FindOptions,
+    Client,
 };
 
 
@@ -30,4 +33,37 @@ impl Mongodb {
 
         Ok(())
     }
+
+    pub async fn get_one(&self, database: &str, collection: &str, filter: Document) -> Option<Document> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        collection.find_one(filter, None).await.ok()?
+    }
+
+    pub async fn get(&self, database: &str, collection: &str, filter: Document) -> Option<Vec<Document>>{
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+
+        let cursor = collection.find(filter, None).await;
+
+        match cursor {
+            Ok(mut cur) => {
+                let mut vec_doc: Vec<Document> = Vec::new();
+
+                while let Some(doc) = cur.next().await {
+                    if let Ok(d) = doc {
+                        vec_doc.push(d);
+                    }
+                }
+        
+                Some(vec_doc)
+            }
+            Err(_) => {
+                return None;
+            }
+        }
+    }
+
 }

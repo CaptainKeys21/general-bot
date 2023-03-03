@@ -1,18 +1,19 @@
 version: '3.8'
 
 services:
-  logger-db:
+  db:
     build: ./mongo/
     restart: always
     ports:
       - 27017:27017
     volumes:
-      - log-data:/data/db
+      - bot-data:/data/db
     env_file:
       - ./config/mongod.env
+      - ./config/bot.env
 
 volumes:
-  log-data: {}
+  bot-data: {}
 
 # networks:
 

@@ -69,6 +69,7 @@ pub async fn fill(
     prefix: &str,
     id: u64,
     shard_manager: Arc<tokio::sync::Mutex<ShardManager>>,
+    database: Mongodb,
 ) -> Result<(), Box<dyn Error>> {
     let mut data = data.write().await;
     let mut map = HashMap::<&str, String>::new();
@@ -82,8 +83,6 @@ pub async fn fill(
     let commands = CommandManager::new();
     data.insert::<CommandCache>(Arc::new(RwLock::new(commands)));
 
-
-    let database = Mongodb::new().await;
     data.insert::<DatabaseCache>(Arc::new(RwLock::new(database.clone())));
 
     let logger = Logger::new(database.clone());
