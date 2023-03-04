@@ -9,15 +9,11 @@ use tokio::sync::{Mutex, RwLock};
 use serenity::{
     client::bridge::gateway::ShardManager,
     prelude::{TypeMap, TypeMapKey},
-    model::{
-        channel::Message,
-    },
 };
 
 use crate::services::commands::CommandManager;
 use crate::services::mongodb::Mongodb;
 use crate::services::logger::Logger;
-use lru_cache::LruCache;
 
 /** Caching **/
 
@@ -31,23 +27,23 @@ impl TypeMapKey for ShardManagerCache {
     type Value = Arc<Mutex<ShardManager>>;
 }
 
-pub struct MessageCacheEntry {
-    pub our_msg: Message,
-    pub original_msg: Message,
-}
-impl MessageCacheEntry {
-    pub fn new(our_msg: Message, original_msg: Message) -> Self {
-        MessageCacheEntry {
-            our_msg,
-            original_msg,
-        }
-    }
-}
+// pub struct MessageCacheEntry {
+//     pub our_msg: Message,
+//     pub original_msg: Message,
+// }
+// impl MessageCacheEntry {
+//     pub fn new(our_msg: Message, original_msg: Message) -> Self {
+//         MessageCacheEntry {
+//             our_msg,
+//             original_msg,
+//         }
+//     }
+// }
 
-pub struct MessageCache;
-impl TypeMapKey for MessageCache {
-    type Value = Arc<Mutex<LruCache<u64, MessageCacheEntry>>>;
-}
+// pub struct MessageCache;
+// impl TypeMapKey for MessageCache {
+//     type Value = Arc<Mutex<LruCache<u64, MessageCacheEntry>>>;
+// }
 
 pub struct CommandCache;
 impl TypeMapKey for CommandCache {

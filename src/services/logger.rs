@@ -1,4 +1,5 @@
 use mongodb::bson::{doc, DateTime};
+use serenity::model::prelude::Message;
 use std::fmt::{Display, Formatter, Result};
 use chrono::Utc;
 use crate::services::mongodb::Mongodb;
@@ -48,18 +49,30 @@ impl Logger {
         }
     }
 
-    pub async fn command(&self, level: LogType, cmd_name: &str, msg: &str, print_line: bool) {
+    pub async fn command(&self, level: LogType, cmd_name: &str, msg: &Message, extra_msg: &str, print_line: bool) {
+        let mut command_args: Vec<&str> = msg.content.split_whitespace().collect();
+        command_args.remove(0); //* Remove the command name from the args vector
+        
+        let command_author = &msg.author;
+
         let date_now = Utc::now();
 
         let data = doc! {
             "type": level.to_string(),
-            "command": cmd_name,
-            "message": msg,
+            "author": {
+                "id": command_author.id.0 as u32,
+                "tag": command_author.tag(),
+            },
+            "command": {
+                "name": cmd_name,
+                "args": command_args,
+            },
+            "message": extra_msg,
             "time": DateTime::from_chrono(date_now),
         };
 
         if print_line {
-            println!("{} | [{} | {}] => {}", date_now.timestamp(), level.to_string(), cmd_name, msg);
+            println!("{} | [{} | {cmd_name}] => {} | {extra_msg}", date_now.timestamp(), level.to_string(), command_author.tag());
         }
 
         if let Err(e) = self.database.insert_one("Logger", "commands", data).await {

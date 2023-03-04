@@ -3,9 +3,14 @@ use serenity::{
     client::Context,
     framework::standard::CommandResult,
     model::{
-        guild::Guild, interactions::application_command::ApplicationCommand,
-        interactions::application_command::ApplicationCommandInteraction,
-        interactions::application_command::ApplicationCommandType,
+        application::{
+            interaction::application_command::ApplicationCommandInteraction,
+            command::{
+                Command,
+                CommandType
+            }
+        },
+        guild::Guild,
     },
 };
 
@@ -65,7 +70,7 @@ impl CommandManager {
         }
         self.commands_registered = true;
 
-        match ApplicationCommand::set_global_application_commands(&ctx.http, |setter| {
+        match Command::set_global_application_commands(&ctx.http, |setter| {
             setter.set_application_commands(self.commands.clone())
         })
         .await
@@ -79,7 +84,7 @@ impl CommandManager {
         let mut cmds = Vec::new();
 
         let mut cmd = CreateApplicationCommand::default();
-        cmd.kind(ApplicationCommandType::ChatInput)
+        cmd.kind(CommandType::ChatInput)
             .name("ping")
             .description("Ping de teste");
         cmds.push(cmd);

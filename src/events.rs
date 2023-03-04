@@ -1,6 +1,6 @@
 use serenity::{
     async_trait,
-    framework::{standard::macros::hook, standard::CommandResult},
+    framework::{standard::{macros::hook, DispatchError}, standard::CommandResult},
     model::{
         channel::Message, 
         application::interaction::Interaction,
@@ -12,11 +12,13 @@ use serenity::{
 
 use crate::{
     cache::*,
-    services::logger::LogType,
+    services::logger::LogType, utils::embeds,
 };
 
+// Event handler from serenity
 pub struct Handler;
 
+// Shard event handler
 #[async_trait]
 trait ShardsReadyHandler {
     async fn all_shards_ready(&self, ctx: &Context );
@@ -35,6 +37,7 @@ impl ShardsReadyHandler for Handler {
     }
 }
 
+// Main event handler
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _ready: Ready) {
@@ -55,19 +58,35 @@ impl EventHandler for Handler {
     }
 }
 
+// Command hook, runs before every command
 #[hook]
-pub async fn before(ctx: &Context, _msg: &Message, command_name: &str) -> bool {
+pub async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
     let data = ctx.data.read().await;
     let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(LogType::Info, command_name, "START", true).await;
+    log.command(LogType::Info, command_name, msg, "START", true).await;
 
     true
 }
 
+// Command hook, runs after every command
 #[hook]
-pub async fn after(ctx: &Context, _msg: &Message, command_name: &str, _command_result: CommandResult) {
+pub async fn after(ctx: &Context, msg: &Message, command_name: &str, _command_result: CommandResult) {
     let data = ctx.data.read().await;
     let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(LogType::Info, command_name, "END", true).await;
+    log.command(LogType::Info, command_name, msg, "END", true).await;
 
+}
+
+#[hook]
+pub async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError, _: &str) {
+    match error {
+        DispatchError::Ratelimited(_) => {
+            let emb = embeds::build_fail_embed(&msg.author, "Limite de tempo entre um e outro exedido.");
+            msg.channel_id.send_message(&ctx.http, |m| m.set_embed(emb)).await.unwrap();
+        }
+        _ => {
+            let emb = embeds::build_fail_embed(&msg.author, "Erro desconhecido.");
+            msg.channel_id.send_message(&ctx.http, |m| m.set_embed(emb)).await.unwrap();
+        }
+    }
 }
