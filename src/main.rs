@@ -14,14 +14,13 @@ use serenity::{
     prelude::GatewayIntents,
 };
 
-use bson::doc;
-
 use std::{
     collections::HashSet,
     error::Error,
     env,
 };
 
+use crate::models::bot_config::BotConfig;
 use crate::services::mongodb::Mongodb;
 use crate::commands::{
     ping::*,
@@ -36,45 +35,33 @@ struct General;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let database = Mongodb::new().await; // Database setup
-    if let Err(e) = dotenv::from_filename("./config/mongod.env") { // Enviroment variables setup
+    if let Err(e) = dotenv::from_filename("./config/bot.env") { // Enviroment variables setup
         println!("Env file not found: {}", e);
     }
 
-    // Database query, equivalent to "WHERE" in SQL
-    let query_filter = doc! {
-        "$or": [
-                {"name": "token"},
-                {"name": "app_id"}, 
-                {"name": "prefix"},
-            ]
-        };
-
     // Retrieving token, app_id and prefix, if get a error, try to get in the enviroment variables
-    let (token, app_id, prefix) = match database.get("GeneralBot", "config", query_filter).await {
-        Some(res) => {
-            let mut token = String::new();
-            let mut app_id = String::new();
-            let mut prefix = String::new();
+    let data = BotConfig::get_many(&database, &["token", "app_id", "prefix"]).await;
 
-            for doc in res {
-                match doc.get_str("name").expect("Expected config name from vector") {
-                    "token"  => token = String::from(doc.get_str("data").expect("Expected data from vector")),
-                    "app_id" => app_id = String::from(doc.get_str("data").expect("Expected data from vector")),
-                    "prefix" => prefix = String::from(doc.get_str("data").expect("Expected data from vector")),
-                    &_ => (), // Does nothing if name is none of the above
-                }
-            }
-
-            (token, app_id, prefix)
-        }
+    let token = match data.get("token") {
+        Some(d) => d.to_string(),
         None => {
             println!("bot token not found in database, trying enviroment variables");
-            let token = env::var("BOT_TOKEN").expect("Expect bot token from enviroment variable");
-            let app_id = env::var("APPLICATION_ID").expect("Expect bot token from enviroment variable");
-            let prefix = env::var("BOT_PREFIX").expect("Expect bot token from enviroment variable");
-
-            (token, app_id, prefix)
-        }
+            env::var("BOT_TOKEN").expect("Expect bot token from enviroment variable")
+        },
+    };
+    let app_id = match data.get("app_id") {
+        Some(d) => d.to_string(),
+        None => {
+            println!("application id not found in database, trying enviroment variables");
+            env::var("APPLICATION_ID").expect("Expect bot token from enviroment variable")
+        },
+    };
+    let prefix = match data.get("prefix") {
+        Some(d) => d.to_string(),
+        None => {
+            println!("prefix not found in database, trying enviroment variables");
+            env::var("BOT_PREFIX").expect("Expect bot token from enviroment variable")
+        },
     };
 
     // HTTP client to make request to the discord api

@@ -1,10 +1,9 @@
-use bson::doc;
 use futures::{StreamExt};
 use mongodb::{
     bson::Document,
     error:: Error,
-    options::FindOptions,
     Client,
+    Collection
 };
 
 
@@ -39,6 +38,12 @@ impl Mongodb {
         let collection = db.collection::<Document>(collection);
 
         collection.find_one(filter, None).await.ok()?
+    }
+
+    pub async fn get_collection<T>(&self, database: &str, collection: &str) -> Collection<T> {
+        let db = self.client.database(database);
+
+        db.collection::<T>(collection)
     }
 
     pub async fn get(&self, database: &str, collection: &str, filter: Document) -> Option<Vec<Document>>{

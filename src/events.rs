@@ -1,3 +1,4 @@
+use serenity::model::prelude::Guild;
 use serenity::{
     async_trait,
     framework::{standard::{macros::hook, DispatchError}, standard::CommandResult},
@@ -12,7 +13,7 @@ use serenity::{
 
 use crate::{
     cache::*,
-    services::logger::LogType, utils::embeds,
+    services::logger::{LogType::*, CmdOrInt}, utils::embeds::build_fail_embed,
 };
 
 // Event handler from serenity
@@ -44,10 +45,24 @@ impl EventHandler for Handler {
         println!("[Shard {}] Pronto", ctx.shard_id);       
     }
 
+    async fn guild_create(&self, ctx: Context, guild: Guild) {
+        let data = ctx.data.read().await;
+
+        // register commands globally in release
+
+        let mut cmd_mgr = data.get::<CommandCache>().unwrap().write().await;
+        cmd_mgr.register_commands_guild(&ctx, &guild).await;
+    }
+
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
             let data_read = ctx.data.read().await;
+
             let commands = data_read.get::<CommandCache>().unwrap().read().await;
+            let log = data_read.get::<LoggerCache>().unwrap().read().await;
+
+            log.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None).await;
+
             match commands.on_command(&ctx, &command).await {
                 Ok(_) => {}
                 Err(e) => {
@@ -63,7 +78,7 @@ impl EventHandler for Handler {
 pub async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
     let data = ctx.data.read().await;
     let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(LogType::Info, command_name, msg, "START", true).await;
+    log.command(Info, command_name, CmdOrInt::Command(msg), Some("START")).await;
 
     true
 }
@@ -73,7 +88,7 @@ pub async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
 pub async fn after(ctx: &Context, msg: &Message, command_name: &str, _command_result: CommandResult) {
     let data = ctx.data.read().await;
     let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(LogType::Info, command_name, msg, "END", true).await;
+    log.command(Info, command_name, CmdOrInt::Command(msg), Some("END")).await;
 
 }
 
@@ -81,11 +96,11 @@ pub async fn after(ctx: &Context, msg: &Message, command_name: &str, _command_re
 pub async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError, _: &str) {
     match error {
         DispatchError::Ratelimited(_) => {
-            let emb = embeds::build_fail_embed(&msg.author, "Limite de tempo entre um e outro exedido.");
+            let emb = build_fail_embed(&msg.author, "Limite de tempo entre um e outro exedido.");
             msg.channel_id.send_message(&ctx.http, |m| m.set_embed(emb)).await.unwrap();
         }
         _ => {
-            let emb = embeds::build_fail_embed(&msg.author, "Erro desconhecido.");
+            let emb = build_fail_embed(&msg.author, "Erro desconhecido.");
             msg.channel_id.send_message(&ctx.http, |m| m.set_embed(emb)).await.unwrap();
         }
     }

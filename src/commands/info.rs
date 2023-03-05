@@ -44,3 +44,24 @@ pub async fn info(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
     Ok(())
 }
+
+pub async fn slash_info(ctx: &Context, msg: &ApplicationCommandInteraction) -> CommandResult {
+    let bot_info = ctx.http.get_current_application_info().await?;
+    let mut embed = CreateEmbed::default();
+    embed.title(bot_info.name);
+    embed.color(COLOR_OKAY);
+    embed.description("Teste");
+    embed.field("Info", "Mostra essa mensagem.", false);
+    embed.field("Ping", "Testa se o bot está online e o quão rápido é a resposta do comando.", false);
+    
+    let mut embed_footer = CreateEmbedFooter::default();
+    embed_footer.text(format!("{CARGO_APP_NAME} | {CARGO_APP_VERSION}"));
+    embed.set_footer(embed_footer);
+
+    msg.create_interaction_response(&ctx.http, |resp| {
+        resp.kind(ChannelMessageWithSource)
+            .interaction_response_data(|data| data.add_embed(embed))
+    }).await?;
+
+    Ok(())
+}

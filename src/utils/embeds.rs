@@ -1,4 +1,4 @@
-use serenity::{builder::{CreateEmbed, CreateMessage}, model::user::User};
+use serenity::{builder::CreateEmbed, model::user::User};
 
 use super::constants::COLOR_FAIL;
 

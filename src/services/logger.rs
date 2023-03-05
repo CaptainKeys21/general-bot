@@ -1,5 +1,9 @@
-use mongodb::bson::{doc, DateTime};
-use serenity::model::prelude::Message;
+use mongodb::bson::{doc, DateTime, ser::Serializer};
+use serde::{Serialize};
+use serenity::model::{
+    application::interaction::application_command::ApplicationCommandInteraction,
+    prelude::Message,
+};
 use std::fmt::{Display, Formatter, Result};
 use chrono::Utc;
 use crate::services::mongodb::Mongodb;
@@ -22,6 +26,11 @@ impl Display for LogType {
     }
 }
 
+pub enum CmdOrInt<'a> {
+    Command(&'a Message),
+    Interaction(&'a ApplicationCommandInteraction)
+}
+
 pub struct Logger {
     database: Mongodb,
 }
@@ -35,7 +44,7 @@ impl Logger {
         let date_now = Utc::now();
 
         let data = doc! {
-            "type": level.to_string(),
+            "logType": level.to_string(),
             "message": msg,
             "time": DateTime::from_chrono(date_now),
         };
@@ -49,34 +58,52 @@ impl Logger {
         }
     }
 
-    pub async fn command(&self, level: LogType, cmd_name: &str, msg: &Message, extra_msg: &str, print_line: bool) {
-        let mut command_args: Vec<&str> = msg.content.split_whitespace().collect();
-        command_args.remove(0); //* Remove the command name from the args vector
-        
-        let command_author = &msg.author;
+    pub async fn command(&self, level: LogType, cmd_name: &str, cmd_detail: CmdOrInt<'_>, extra_msg: Option<&str>) {
 
-        let date_now = Utc::now();
+        let data = match cmd_detail {
+            CmdOrInt::Command(msg) => {
+                let mut command_args: Vec<&str> = msg.content.split_whitespace().collect();
+                command_args.remove(0); //* Remove the command name from the args vector
+            
+                let command_author = msg.author.serialize(Serializer::new()).unwrap();
 
-        let data = doc! {
-            "type": level.to_string(),
-            "author": {
-                "id": command_author.id.0 as u32,
-                "tag": command_author.tag(),
-            },
-            "command": {
-                "name": cmd_name,
-                "args": command_args,
-            },
-            "message": extra_msg,
-            "time": DateTime::from_chrono(date_now),
+                let date_now = Utc::now();
+
+                let data = doc! {
+                    "logType": level.to_string(),
+                    "author": command_author,
+                    "command": {
+                        "name": cmd_name,
+                        "args": command_args,
+                        "isSlashCommand": false,
+                    },
+                    "message": extra_msg,
+                    "time": DateTime::from_chrono(date_now),
+                };
+
+                data
+            }
+
+            CmdOrInt::Interaction(int) => {
+                let command_author = int.user.serialize(Serializer::new()).unwrap();
+
+                let interaction_data = int.data.serialize(Serializer::new()).unwrap();
+
+                let date_now = Utc::now();
+
+                let data = doc! {
+                    "logType": level.to_string(),
+                    "author": command_author,
+                    "command": interaction_data,
+                    "message": extra_msg,
+                    "time": DateTime::from_chrono(date_now),
+                };
+
+                data
+            }
         };
+        
 
-        if print_line {
-            println!("{} | [{} | {cmd_name}] => {} | {extra_msg}", date_now.timestamp(), level.to_string(), command_author.tag());
-        }
-
-        if let Err(e) = self.database.insert_one("Logger", "commands", data).await {
-            panic!("{}", e)
-        }
+        if let Err(e) = self.database.insert_one("Logger", "commands", data).await {}
     }
 }

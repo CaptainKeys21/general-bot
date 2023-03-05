@@ -38,6 +38,7 @@ impl CommandManager {
 
         match command_name.as_str() {
             "ping" => commands::ping::slash_ping(ctx, command).await,
+            "info" => commands::info::slash_info(ctx, command).await,
             e => {
                 println!("Unknown application command received: {}", e);
                 Ok(())
@@ -72,9 +73,7 @@ impl CommandManager {
 
         match Command::set_global_application_commands(&ctx.http, |setter| {
             setter.set_application_commands(self.commands.clone())
-        })
-        .await
-        {
+        }).await {
             Ok(cmds) => println!("Registered {} application commands", cmds.len()),
             Err(e) => println!("Unable to set application commands: {}", e),
         }
@@ -87,6 +86,12 @@ impl CommandManager {
         cmd.kind(CommandType::ChatInput)
             .name("ping")
             .description("Ping de teste");
+        cmds.push(cmd);
+
+        cmd = CreateApplicationCommand::default();
+        cmd.kind(CommandType::ChatInput)
+            .name("info")
+            .description("Mostra informações do bot");
         cmds.push(cmd);
 
         cmds
