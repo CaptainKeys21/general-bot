@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use futures::{TryStreamExt, StreamExt};
+use futures::{TryStreamExt};
 use serde::{Deserialize, Serialize};
 use bson::doc;
 
@@ -36,7 +36,7 @@ impl BotConfig {
         let mut hash_res: HashMap<String, String> = HashMap::new();
 
         if let Ok(cursor) = data {
-            let cur_vec: Vec<_> = cursor.try_collect().await.unwrap();
+            let cur_vec: Vec<BotConfig> = cursor.try_collect().await.unwrap_or(Vec::new());
 
             for conf in cur_vec {
                 hash_res.insert(conf.name, conf.data);

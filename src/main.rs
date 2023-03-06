@@ -27,6 +27,8 @@ use crate::commands::{
     info::*,
 };
 
+use crate::events::hooks;
+
 //* General struct from Serenity
 #[group]
 #[commands(ping, info)]
@@ -94,8 +96,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Framework build
     let framework = StandardFramework::new()
         .configure(|c| c.owners(owners).prefix(&prefix))
-        .before(events::before)
-        .after(events::after)
+        .before(hooks::before::before)
+        .after(hooks::after::after)
         .group(&GENERAL_GROUP)
         .bucket("nospam", |b| b.delay(3).time_span(10).limit(3))
         .await;
