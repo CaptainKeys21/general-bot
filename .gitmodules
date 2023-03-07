@@ -1,0 +1,6 @@
+[submodule "api"]
+	path = api
+	url = https://github.com/CaptainKeys21/general-bot-api.git
+[submodule "client"]
+	path = client
+	url = https://github.com/CaptainKeys21/general-bot-dashboard.git
