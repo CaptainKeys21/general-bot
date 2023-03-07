@@ -14,7 +14,7 @@ pub struct Mongodb {
 
 impl Mongodb {
     pub async fn new() -> Mongodb {
-        let new_client = Client::with_uri_str("mongodb://GENERAL_BOT:general%40bot@localhost:27017").await.expect("Erro ao conectar na base de dados");
+        let new_client = Client::with_uri_str("mongodb://GENERAL_BOT:general%40bot@general-bot-database:27017").await.expect("Erro ao conectar na base de dados");
 
         Mongodb {
             client: new_client

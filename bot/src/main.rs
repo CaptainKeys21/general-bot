@@ -34,6 +34,9 @@ use crate::events::hooks;
 #[commands(ping, info)]
 struct General;
 
+#[group]
+struct Admin;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let database = Mongodb::new().await; // Database setup

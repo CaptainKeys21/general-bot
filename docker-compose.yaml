@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   db:
+    container_name: general-bot-database
     build: ./mongo/
     restart: always
     ports:
@@ -11,10 +12,30 @@ services:
     env_file:
       - ./config/mongod.env
       - ./config/bot.env
+    # networks:
+    #   - internal
+
+  bot:
+    container_name: general-bot-main
+    depends_on:
+      - db
+    build: ./bot/
+    #restart: always,
+    volumes:
+      - /root/projects/general-bot/bot:/usr/src/bot
+    env_file:
+      - ./config/bot.env
+    # networks:
+    #   - internal
+    #   - external
 
 volumes:
   bot-data: {}
 
 # networks:
+#   internal:
+#     driver: bridge
+#   external:
+#     driver: macvlan
 
     
