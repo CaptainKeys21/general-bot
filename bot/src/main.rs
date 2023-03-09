@@ -25,6 +25,7 @@ use crate::services::mongodb::Mongodb;
 use crate::commands::{
     ping::*,
     info::*,
+    insert_users::*,
 };
 
 use crate::events::hooks;
@@ -35,6 +36,8 @@ use crate::events::hooks;
 struct General;
 
 #[group]
+#[prefix = "admin"]
+#[commands(insert_users)]
 struct Admin;
 
 #[tokio::main]
@@ -102,6 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .before(hooks::before::before)
         .after(hooks::after::after)
         .group(&GENERAL_GROUP)
+        .group(&ADMIN_GROUP)
         .bucket("nospam", |b| b.delay(3).time_span(10).limit(3))
         .await;
 

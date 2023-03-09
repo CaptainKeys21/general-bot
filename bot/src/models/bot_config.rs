@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use futures::{TryStreamExt};
+use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use bson::doc;
 

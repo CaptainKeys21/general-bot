@@ -33,6 +33,20 @@ impl Mongodb {
         Ok(())
     }
 
+    pub async fn insert_many(&self, database: &str, collection: &str, data: Vec<Document>) -> Result<(), Error> {
+        if data.is_empty() {
+            return Ok(());
+        }
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        if let Err(e) = collection.insert_many(data, None).await {
+            return Err(e);
+        }
+
+        Ok(())
+    }
+
     pub async fn get_one(&self, database: &str, collection: &str, filter: Document) -> Option<Document> {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
