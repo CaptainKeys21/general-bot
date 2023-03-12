@@ -43,7 +43,7 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     let author_id = msg.author.id.0;
 
 
-    let cmd_configs = CommandConfig::get_many(&database, cmd_opts.names).await;
+    let cmd_configs = CommandConfig::get_many(&database, cmd_opts.names, Some("command_allowed_ids")).await;
     
     let mut is_allowed = false;
 

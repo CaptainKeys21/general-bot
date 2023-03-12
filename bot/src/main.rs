@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Retrieving token, app_id and prefix, if get a error, try to get in the enviroment variables
-    let data = GeneralConfig::get_many(&database, &["token", "app_id", "prefix"]).await;
+    let data = GeneralConfig::get_many(&database, &["token", "app_id", "prefix"], Some("general")).await;
 
     let token = match data.get("token") {
         Some(d) => d.to_string(),

@@ -35,15 +35,20 @@ impl GetFromDataBase for GeneralConfig {
         }
     }
 
-    async fn get_many(database: &Mongodb, configs: &[&str]) -> HashMap<String, Self::Output> {
+    async fn get_many(database: &Mongodb, configs: &[&str], config_type: Option<&str>) -> HashMap<String, Self::Output> {
         let collection = database.get_collection::<GeneralConfig>("GeneralBot", "config").await;
         
-        let mut filter = Vec::new();
+        let mut names = Vec::new();
         for conf in configs.iter() {
-            filter.push(doc! {"name": conf});
+            names.push(doc! {"name": conf})   
         }
 
-        let data = collection.find(doc! {"$or": filter}, None).await;
+        let query = match config_type {
+            Some(t) => doc! {"config_type": t, "$or": names},
+            None => doc! {"$or": names}
+        };
+
+        let data = collection.find(query, None).await;
 
         let mut hash_res: HashMap<String, String> = HashMap::new();
 
