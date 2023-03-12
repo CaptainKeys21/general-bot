@@ -20,7 +20,7 @@ services:
     depends_on:
       - db
     build: ./bot/
-    #restart: always,
+    restart: always
     volumes:
       - /root/projects/general-bot/bot:/usr/src/bot
     env_file:

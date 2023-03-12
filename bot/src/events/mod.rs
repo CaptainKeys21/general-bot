@@ -3,6 +3,7 @@ pub mod ready;
 pub mod all_shards_ready;
 pub mod guild_create;
 pub mod interaction_create;
+pub mod checkers;
 
 use serenity::model::prelude::Guild;
 use serenity::{

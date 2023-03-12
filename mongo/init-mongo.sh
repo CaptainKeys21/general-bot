@@ -11,8 +11,8 @@ use GeneralBot
 db.createCollection("config")
 
 db.config.insertMany([
-    {name: "token", data: "${BOT_TOKEN}"},
-    {name: "app_id", data: "${APPLICATION_ID}"},
-    {name: "prefix", data: "${BOT_PREFIX}"},
+    {name: "token", config_type: "general", data: "${BOT_TOKEN}"},
+    {name: "app_id", config_type: "general", data: "${APPLICATION_ID}"},
+    {name: "prefix", config_type: "general", data: "${BOT_PREFIX}"},
 ])
 EOF

@@ -5,9 +5,9 @@ mod events;
 mod utils;
 mod models;
 
+use models::traits::GetFromDataBase;
 use serenity::{
     framework::{
-        standard::macros::group,
         StandardFramework,
     },
     http::Http,
@@ -20,25 +20,13 @@ use std::{
     env,
 };
 
-use crate::models::bot_config::BotConfig;
+use crate::models::general_config::GeneralConfig;
 use crate::services::mongodb::Mongodb;
-use crate::commands::{
-    ping::*,
-    info::*,
-    insert_users::*,
-};
-
 use crate::events::hooks;
-
-//* General struct from Serenity
-#[group]
-#[commands(ping, info)]
-struct General;
-
-#[group]
-#[prefix = "admin"]
-#[commands(insert_users)]
-struct Admin;
+use crate::commands::{
+    GENERAL_GROUP,
+    ADMIN_GROUP
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -48,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Retrieving token, app_id and prefix, if get a error, try to get in the enviroment variables
-    let data = BotConfig::get_many(&database, &["token", "app_id", "prefix"]).await;
+    let data = GeneralConfig::get_many(&database, &["token", "app_id", "prefix"]).await;
 
     let token = match data.get("token") {
         Some(d) => d.to_string(),
