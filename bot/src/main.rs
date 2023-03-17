@@ -4,7 +4,10 @@ mod cache;
 mod events;
 mod utils;
 mod models;
+mod api;
 
+use api::router::build_router;
+use cache::ConfigCache;
 use models::traits::GetFromDataBase;
 use serenity::{
     framework::{
@@ -13,6 +16,9 @@ use serenity::{
     http::Http,
     prelude::GatewayIntents,
 };
+
+
+use std::{net::SocketAddr, sync::Arc};
 
 use std::{
     collections::HashSet,
@@ -87,11 +93,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    // Framework build
+    //Framework build
     let framework = StandardFramework::new()
-        .configure(|c| c.owners(owners).prefix(&prefix))
+        .configure(|c| {
+            c.owners(owners);
+            c.prefix("!gen>");
+            c.dynamic_prefix(|ctx, _| {
+                Box::pin(async move { 
+                    let data = ctx.data.read().await;
+                    let config = data.get::<ConfigCache>()?.read().await;
+                    let prefix = config.get("BOT_PREFIX")?;
+
+                    Some(String::from(prefix)) 
+                })
+            });
+
+            c
+        })
         .before(hooks::before::before)
         .after(hooks::after::after)
+        .on_dispatch_error(hooks::dispatch_error::dispatch_error)
         .group(&GENERAL_GROUP)
         .group(&ADMIN_GROUP)
         .bucket("nospam", |b| b.delay(3).time_span(10).limit(3))
@@ -107,18 +128,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .application_id(app_id.parse::<u64>().unwrap())
         .await?;
 
+    let client_data = client.data.clone();
     // Storing some data in memory
     cache::fill(
-        client.data.clone(), 
+        client_data.clone(), 
         &prefix, 
         bot_id.0, 
         client.shard_manager.clone(),
         database
     ).await?;
 
+    tokio::task::spawn(async move {
+        // build our application with a route
+        let app = build_router(client_data.clone());
+
+        // run our app with hyper
+        // `axum::Server` is a re-export of `hyper::Server`
+        let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+        axum::Server::bind(&addr)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    });
+
     // Start Client
     if let Err(why) = client.start_autosharded().await {
-        println!("Erro ao iniciar o cliente: {}", why)
+        println!("Erro ao iniciar o cliente: {}", why);
     }
 
     Ok(())

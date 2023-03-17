@@ -1,12 +1,13 @@
 use std::collections::HashMap;
+use mongodb::error::Error;
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
-use bson::doc;
+use bson::{doc, Document};
 use serenity::async_trait;
 
 use crate::services::mongodb::Mongodb;
 
-use super::traits::GetFromDataBase;
+use super::traits::{GetFromDataBase, InsertIntoDataBase, UpdateFromDataBase};
 
 #[derive(Deserialize, Serialize)]
 pub struct GeneralConfig {
@@ -61,5 +62,26 @@ impl GetFromDataBase for GeneralConfig {
         }
        
         hash_res
+    }
+}
+
+#[async_trait]
+impl UpdateFromDataBase for GeneralConfig {
+    type Input = String;
+
+    async fn edit_one(database: &Mongodb, data: Self::Input, filter: Document) -> Result<(), Error> {
+        let collection = database.get_collection::<GeneralConfig>("GeneralBot", "config").await;
+
+        let document_set = doc! {
+            "$set": {
+                "data": data,
+            }
+        };
+
+        if let Err(e) = collection.update_one(filter, document_set, None).await {
+            return Err(e);
+        };
+
+        Ok(())
     }
 }

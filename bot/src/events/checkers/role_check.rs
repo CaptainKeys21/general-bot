@@ -1,9 +1,9 @@
 use serenity::{
     framework::standard::{
-        Reason, 
         macros::check, 
         Args, 
-        CommandOptions
+        CommandOptions, 
+        Reason
     }, 
     prelude::Context, 
     model::prelude::Message
@@ -21,7 +21,7 @@ use crate::{
     services::logger::{
         LogType::*,
         CmdOrInt::*,
-    }, utils::embeds::build_warn_embed
+    }
 };
 
 #[check]
@@ -60,9 +60,7 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
 
     if !is_allowed {
         log.command(Error, cmd_opts.names[0], Command(&msg), None).await;
-        let emb = build_warn_embed(&msg.author, "Você não possui os cargos necessários para executar esse comando");
-        msg.channel_id.send_message(&ctx.http, |m| m.set_embed(emb)).await.unwrap();
-        return Err(Reason::User("Lacked owner permission".to_string()));
+        return Err(Reason::User("Sem cargos necessários".to_string()));
     }
 
 
