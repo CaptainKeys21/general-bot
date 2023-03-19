@@ -37,7 +37,7 @@ impl CommandManager {
         let command_name = command.data.name.to_lowercase();
 
         match command_name.as_str() {
-            "ping" => commands::general::ping::slash_ping(ctx, command).await,
+            "ping" => commands::general::ping::slash::run(ctx, command).await,
             "info" => commands::general::info::slash_info(ctx, command).await,
             e => {
                 println!("Unknown application command received: {}", e);

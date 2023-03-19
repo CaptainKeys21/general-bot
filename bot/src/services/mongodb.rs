@@ -1,6 +1,6 @@
 use futures::{StreamExt};
 use mongodb::{
-    bson::Document,
+    bson::{Document, doc},
     error:: Error,
     Client,
     Collection
@@ -83,6 +83,28 @@ impl Mongodb {
                 return None;
             }
         }
+    }
+
+    pub async fn delete_one(&self, database: &str, collection: &str, filter: Document) -> Result<(), Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        if let Err(e) = collection.delete_one(filter, None).await {
+            return Err(e);
+        }
+
+        Ok(())
+    }
+
+    pub async fn clear_collection(&self, database: &str, collection: &str) -> Result<(), Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        if let Err(e) = collection.delete_many(doc! {}, None).await {
+            return Err(e)
+        };
+
+        Ok(())
     }
 
 }

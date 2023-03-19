@@ -17,6 +17,7 @@ use general::{
 struct General;
 
 #[group]
+#[checks(Role)]
 #[prefix = "admin"]
 #[commands(insert_users)]
 struct Admin;

@@ -76,8 +76,8 @@ pub async fn fill(
 
     data.insert::<ShardManagerCache>(shard_manager);
 
-    let commands = CommandManager::new();
-    data.insert::<CommandCache>(Arc::new(RwLock::new(commands)));
+    //let commands = CommandManager::new();
+    //data.insert::<CommandCache>(Arc::new(RwLock::new(commands)));
 
     data.insert::<DatabaseCache>(Arc::new(RwLock::new(database.clone())));
 

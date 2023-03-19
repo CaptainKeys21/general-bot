@@ -30,18 +30,38 @@ pub async fn ping(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     Ok(())
 }
 
-pub async fn slash_ping(ctx: &Context, msg: &ApplicationCommandInteraction) -> CommandResult {
-    let old = Instant::now();
-    msg.create_interaction_response(&ctx.http, |resp| {
-        resp.kind(ChannelMessageWithSource)
-            .interaction_response_data(|data| data.content("Pong!\n.."))
-    }).await?;
+pub mod slash {
+    use std::time::Instant;
 
-    let new = Instant::now();
+    use serenity::{
+        framework::standard::CommandResult,
+        model::{
+            application::interaction::{
+                InteractionResponseType::ChannelMessageWithSource,
+                application_command::ApplicationCommandInteraction,
+            }
+        },
+        prelude::*, 
+        builder::CreateApplicationCommand,
+    };
 
-    msg.edit_original_interaction_response(&ctx.http, |resp| {
-        resp.content(format!("🏓 Pong!\n{} ms", (new - old).as_millis()))
-    }).await?;
+    pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {
+        command.name("ping").description("Testa a conexão com o bot")
+    }
 
-    Ok(())
+    pub async fn run(ctx: &Context, msg: &ApplicationCommandInteraction) -> CommandResult {
+        let old = Instant::now();
+        msg.create_interaction_response(&ctx.http, |resp| {
+            resp.kind(ChannelMessageWithSource)
+                .interaction_response_data(|data| data.content("Pong!\n.."))
+        }).await?;
+    
+        let new = Instant::now();
+    
+        msg.edit_original_interaction_response(&ctx.http, |resp| {
+            resp.content(format!("🏓 Pong!\n{} ms", (new - old).as_millis()))
+        }).await?;
+    
+        Ok(())
+    }
 }
