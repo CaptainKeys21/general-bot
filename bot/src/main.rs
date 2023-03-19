@@ -37,9 +37,9 @@ use crate::commands::{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let database = Mongodb::new().await; // Database setup
-    if let Err(e) = dotenv::from_filename("./config/bot.env") { // Enviroment variables setup
-        println!("Env file not found: {}", e);
-    }
+    // if let Err(e) = dotenv::from_filename("./config/bot.env") { // Enviroment variables setup
+    //     println!("Env file not found: {}", e);
+    // }
 
     // Retrieving token, app_id and prefix, if get a error, try to get in the enviroment variables
     let data = GeneralConfig::get_many(&database, &["token", "app_id", "prefix"], Some("general")).await;

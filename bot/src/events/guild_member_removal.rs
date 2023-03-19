@@ -10,7 +10,7 @@ use serenity::{
 
 use crate::{cache::{LoggerCache, DatabaseCache}, models::member::BotMember};
 
-pub async fn guild_member_removal(ctx: Context, guild_id: GuildId, user: User, member: Option<Member>) {
+pub async fn guild_member_removal(ctx: Context, _guild_id: GuildId, user: User, _member: Option<Member>) {
     let data = ctx.data.read().await;
     let log = data.get::<LoggerCache>().unwrap().read().await;
     let database = data.get::<DatabaseCache>().unwrap().read().await;
