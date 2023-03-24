@@ -12,8 +12,6 @@ services:
     env_file:
       - ./config/mongod.env
       - ./config/bot.env
-    # networks:
-    #   - internal
 
   dev-bot:
     container_name: general-bot-main-development
@@ -21,13 +19,28 @@ services:
       - db
     image: rust:1.67
     ports:
-      - 3000:3000
+      - 8080:8080
     volumes:
-      - /root/projects/general-bot/bot:/usr/src/bot
+      - ./bot:/usr/src/bot
+    working_dir: /usr/src/bot
     env_file:
       - ./config/bot.env
-    # networks:
-    #   - internal
+    command: ["cargo", "run"]
+
+  dev-api:
+    container_name: general-bot-api-development
+    depends_on:
+      - db
+    image: node:19
+    ports:
+      - 8081:8081
+    volumes:
+      - ./api:/home/node/app
+    working_dir: /home/node/app
+    env_file:
+      - ./config/api.env
+    command: ["npm", "run", "dev"]
+
 
   bot:
     container_name: general-bot-main
@@ -36,20 +49,12 @@ services:
     build: ./bot/
     restart: always
     volumes:
-      - /root/projects/general-bot/bot:/usr/src/bot
+      - ./bot:/usr/src/bot
     env_file:
       - ./config/bot.env
-    # networks:
-    #   - internal
-    #   - external
 
 volumes:
   bot-data: {}
 
-# networks:
-#   internal:
-#     driver: bridge
-#   external:
-#     driver: macvlan
 
     

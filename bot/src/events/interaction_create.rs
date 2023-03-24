@@ -20,7 +20,7 @@ pub async fn interaction_create(ctx: Context, interaction: Interaction) {
         let commands = data_read.get::<CommandCache>().unwrap().read().await;
         let log = data_read.get::<LoggerCache>().unwrap().read().await;
 
-        log.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None).await;
+        log.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None);
 
         match commands.on_command(&ctx, &command).await {
             Ok(_) => {}

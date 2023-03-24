@@ -3,6 +3,8 @@ set -e
 # set -e causes the whole script to exit when a command fails, so the script can't silently fail and startup mongo.
 
 mongosh -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} <<EOF
+rs.initiate({_id: "GenBotDev", members: [{_id: 0, host: "general-bot-database:27017"}]})
+
 use Logger
 db.createCollection("default")
 db.createCollection("commands")

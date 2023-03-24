@@ -65,7 +65,7 @@ impl Logger {
         Logger { database: Arc::new(database) }
     }
 
-    pub async fn default(&self, level: LogType, msg: &str) {
+    pub fn default(&self, level: LogType, msg: &str) {
         let date_now = Utc::now();
 
         let data = doc! {
@@ -89,7 +89,7 @@ impl Logger {
         });
     }
 
-    pub async fn command(&self, level: LogType, cmd_name: &str, cmd_detail: CmdOrInt<'_>, extra_msg: Option<&str>) {
+    pub fn command(&self, level: LogType, cmd_name: &str, cmd_detail: CmdOrInt<'_>, extra_msg: Option<&str>) {
         let data = match cmd_detail {
             CmdOrInt::Command(msg) => {
                 let mut command_args: Vec<&str> = msg.content.split_whitespace().collect();

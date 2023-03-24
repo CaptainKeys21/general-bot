@@ -59,7 +59,7 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     }
 
     if !is_allowed {
-        log.command(Error, cmd_opts.names[0], Command(&msg), None).await;
+        log.command(Error, cmd_opts.names[0], Command(&msg), None);
         return Err(Reason::User("Sem cargos necessários".to_string()));
     }
 

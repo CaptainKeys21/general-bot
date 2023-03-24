@@ -36,11 +36,11 @@ pub async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError, 
                 Unknown => String::from("Erro de checagem desconhecida"),
                 User(msg) => msg,
                 Log(msg) => {
-                    logger.default(Error, &msg).await;
+                    logger.default(Error, &msg);
                     String::from("Erro de checagem desconhecida")
                 },
                 UserAndLog { user, log } => {
-                    logger.default(Error, &log).await;
+                    logger.default(Error, &log);
                     user
                 },
                 _ => String::from("Erro de checagem desconhecida")
