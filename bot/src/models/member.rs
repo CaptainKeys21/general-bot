@@ -20,7 +20,9 @@ impl BotMember {
                 let mut doc_list = Vec::new();
                 for member in members.iter() {
                     if let Ok(serial_member) = member.serialize(Serializer::new()) {
-                        doc_list.push(doc! { "data": serial_member });
+                        if let Some(d) = serial_member.as_document() {
+                            doc_list.push(d.clone());
+                        }
                     }
                 }
 

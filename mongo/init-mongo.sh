@@ -6,8 +6,8 @@ mongosh -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} <<EOF
 rs.initiate({_id: "GenBotDev", members: [{_id: 0, host: "general-bot-database:27017"}]})
 
 use Logger
-db.createCollection("default")
-db.createCollection("commands")
+db.createCollection("default", { capped: true, size: 5e8 })
+db.createCollection("commands", { capped: true, size: 5e8 }))
 
 use GeneralBot
 db.createCollection("config")

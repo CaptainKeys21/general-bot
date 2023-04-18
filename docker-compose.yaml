@@ -41,6 +41,18 @@ services:
       - ./config/api.env
     command: ["npm", "run", "dev"]
 
+  dev-dashboard:
+    container_name: general-bot-dashboard-development
+    depends_on:
+      - dev-api
+    image: node:19
+    ports:
+      - 3000:3000
+    volumes:
+      - ./client:/home/node/app
+    working_dir: /home/node/app
+    command: ["npm", "run", "dev"]
+
 
   bot:
     container_name: general-bot-main

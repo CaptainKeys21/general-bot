@@ -21,7 +21,7 @@ pub async fn insert_users(ctx: &Context, msg: &Message, _args: Args) -> CommandR
     match msg.guild_id {
         Some(id) => {
             let emb = match BotMember::full_update(&ctx, id.0).await {
-                Ok(_) => build_fail_embed(&msg.author, "Dados inseridos com sucesso"),
+                Ok(_) => build_success_embed(&msg.author, "Dados inseridos com sucesso"),
                 Err(_) => build_fail_embed(&msg.author, "Erro aos inserir os dados"),
             };
             
