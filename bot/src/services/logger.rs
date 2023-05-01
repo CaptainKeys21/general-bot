@@ -89,6 +89,36 @@ impl Logger {
         });
     }
 
+    pub fn message(&self, level: LogType, msg: &Message) {
+        let log_message = format!("Message ({}) | {} => {}",
+            msg.channel_id.0,
+            msg.author.tag(),
+            msg.content,
+        );
+
+        match &level {
+            LogType::Info => log::info!("{}", log_message),
+            LogType::Waring => log::warn!("{}", log_message),
+            LogType::Error => log::error!("{}", log_message),
+            LogType::Debug => log::debug!("{}", log_message),
+        }
+
+        let message_log = msg.serialize(Serializer::new()).unwrap();
+        let date_now = Utc::now();
+        let data = doc! {
+            "logType": level.to_string(),
+            "data": message_log,
+            "time": DateTime::from_chrono(date_now),
+        };
+
+        let task_database = Arc::clone(&self.database);
+        task::spawn(async move {
+            if let Err(e) = task_database.insert_one("Logger", "messages", data).await {
+                log::error!("{}", e);
+            };
+        });
+    }
+
     pub fn command(&self, level: LogType, cmd_name: &str, cmd_detail: CmdOrInt<'_>, extra_msg: Option<&str>) {
         let data = match cmd_detail {
             CmdOrInt::Command(msg) => {

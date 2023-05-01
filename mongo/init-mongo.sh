@@ -7,7 +7,8 @@ rs.initiate({_id: "GenBotDev", members: [{_id: 0, host: "general-bot-database:27
 
 use Logger
 db.createCollection("default", { capped: true, size: 5e8 })
-db.createCollection("commands", { capped: true, size: 5e8 }))
+db.createCollection("commands", { capped: true, size: 5e8 })
+db.createCollection("messages", { capped: true, size: 5e9 })
 
 use GeneralBot
 db.createCollection("config")
