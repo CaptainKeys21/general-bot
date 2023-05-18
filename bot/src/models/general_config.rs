@@ -7,7 +7,7 @@ use serenity::async_trait;
 
 use crate::services::mongodb::Mongodb;
 
-use super::traits::{GetFromDataBase, InsertIntoDataBase, UpdateFromDataBase};
+use super::traits::{GetFromDataBase, UpdateFromDataBase};
 
 #[derive(Deserialize, Serialize)]
 pub struct GeneralConfig {

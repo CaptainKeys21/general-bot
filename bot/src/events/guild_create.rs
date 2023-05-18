@@ -3,7 +3,7 @@ use serenity::{
     model::prelude::Guild,
     prelude::Context,
 };
-use crate::{cache::CommandCache, models::{member::BotMember, roles::BotRoles}};
+use crate::{cache::CommandCache, models::{member::BotMember, roles::BotRoles, channels::BotChannels}};
 use bson::Serializer;
 
 
@@ -17,5 +17,6 @@ pub async fn guild_create(ctx: Context, guild: Guild, is_new: bool) {
     if cfg!(debug_assertions) {
         if let Err(_) = BotMember::full_update(&ctx, guild.id.0).await {};
         if let Err(_) = BotRoles::full_update(&ctx, guild.id.0).await {};
+        if let Err(_) = BotChannels::full_update(&ctx, guild.id.0).await {};
     }
 }

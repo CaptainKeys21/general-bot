@@ -34,5 +34,6 @@ features = [
     "client", 
     "framework", 
     "utils", 
-    "rustls_backend"
+    "rustls_backend",
+    "unstable_discord_api"
 ]
