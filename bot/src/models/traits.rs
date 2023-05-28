@@ -1,20 +1,22 @@
 use std::collections::HashMap;
 use bson::Document;
 use mongodb::error::Error;
+use serde::{de::DeserializeOwned, Serialize};
 use serenity::async_trait;
 
 use crate::services::mongodb::Mongodb;
 
+pub trait GeneralBotConfig {
+    type Data: 'static + DeserializeOwned + Serialize;
+    const TYPE: &'static str;
+}
 
 #[async_trait]
 pub trait GetFromDataBase {
     type Output;
 
     async fn get_one(database: &Mongodb, config_name: &str, config_type: Option<&str>) -> Option<Self::Output>;
-    // async fn delete_one(database: &Mongodb, filter: Document) -> Result<Self::Output, Error>;
-
     async fn get_many(database: &Mongodb, filter: &[&str], config_type: Option<&str>) -> HashMap<String, Self::Output>;
-    // async fn delete_many(database: &Mongodb, filter: Document) -> Result<Vec<Self::Output>, Error>;
 }
 
 #[async_trait]

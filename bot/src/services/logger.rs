@@ -56,13 +56,16 @@ pub enum CmdOrInt<'a> {
 
 pub struct Logger {
     database: Arc<Mongodb>,
+    //blocked_ids: Vec<u32>
 }
 
 impl Logger {
     pub fn new(database: Mongodb) -> Logger {
         pretty_env_logger::init();
+        let database = Arc::new(database);
+        
 
-        Logger { database: Arc::new(database) }
+        Logger { database }
     }
 
     pub fn default(&self, level: LogType, msg: &str) {

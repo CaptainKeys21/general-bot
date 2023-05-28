@@ -7,8 +7,8 @@ mod models;
 mod api;
 
 use api::router::build_router;
-use cache::ConfigCache;
-use models::traits::GetFromDataBase;
+use cache::ConfigManagerCache;
+use models::configs::general::GeneralConfig;
 use serenity::{
     framework::{
         StandardFramework,
@@ -18,7 +18,7 @@ use serenity::{
 };
 
 
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 
 use std::{
     collections::HashSet,
@@ -26,7 +26,7 @@ use std::{
     env,
 };
 
-use crate::models::general_config::GeneralConfig;
+use crate::models::configs::config_manager::ConfigManager;
 use crate::services::mongodb::Mongodb;
 use crate::events::hooks;
 use crate::commands::{
@@ -41,36 +41,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //     println!("Env file not found: {}", e);
     // }
 
-    // Retrieving token, app_id and prefix, if get a error, try to get in the enviroment variables
-    let data = GeneralConfig::get_many(&database, &["token", "app_id", "prefix"], Some("general")).await;
+    let c_manager = ConfigManager::new(database.clone()).await;
+
+    // Retrieving token and app_id, if get a error, try to get in the enviroment variables
+    let data = c_manager.get_many::<GeneralConfig>(Some(&["token", "app_id",])).await;
 
     let token = match data.get("token") {
-        Some(d) => d.to_string(),
+        Some(d) => d.data.clone(),
         None => {
             println!("bot token not found in database, trying enviroment variables");
             env::var("BOT_TOKEN").expect("Expect bot token from enviroment variable")
         },
     };
     let app_id = match data.get("app_id") {
-        Some(d) => d.to_string(),
+        Some(d) => d.data.clone(),
         None => {
             println!("application id not found in database, trying enviroment variables");
             env::var("APPLICATION_ID").expect("Expect bot token from enviroment variable")
-        },
-    };
-    let prefix = match data.get("prefix") {
-        Some(d) => d.to_string(),
-        None => {
-            println!("prefix not found in database, trying enviroment variables");
-            env::var("BOT_PREFIX").expect("Expect bot token from enviroment variable")
         },
     };
 
     // HTTP client to make request to the discord api
     let http = Http::new(&token);
 
-    //? Bot_id(ApplicationId) and app_id are two diferent things?
-    let (owners, bot_id) = match http.get_current_application_info().await {
+    // Getting application owners
+    let owners = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
 
@@ -82,14 +77,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            (owners, info.id)
+            owners
         }
         Err(why) => {
             println!("Erro ao acessar informações do bot: {}", why);
-            println!("Tentando variavel de ambiente para id do bot...");
-            let id = env::var("BOT_ID").expect("Não foi possível encontrar variavel de ambiente BOT_ID");
-            let bot_id = id.parse::<u64>().expect("Id de bot inválida");
-            (HashSet::new(), serenity::model::id::ApplicationId(bot_id))
+            HashSet::new()
         }
     };
 
@@ -101,10 +93,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             c.dynamic_prefix(|ctx, _| {
                 Box::pin(async move { 
                     let data = ctx.data.read().await;
-                    let config = data.get::<ConfigCache>()?.read().await;
-                    let prefix = config.get("BOT_PREFIX")?;
+                    let cfg_manager = data.get::<ConfigManagerCache>()?.read().await;
+                    let prefix = cfg_manager.get_one::<GeneralConfig>("prefix").await;
 
-                    Some(String::from(prefix)) 
+                    match prefix {
+                        Ok(d) => Some(d.data),
+                        Err(_) => None
+                    }
                 })
             });
 
@@ -132,8 +127,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Storing some data in memory
     cache::fill(
         client_data.clone(), 
-        &prefix, 
-        bot_id.0, 
+        c_manager,
         client.shard_manager.clone(),
         database
     ).await?;
@@ -144,7 +138,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // run our app with hyper
         // `axum::Server` is a re-export of `hyper::Server`
-        let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+        let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
         axum::Server::bind(&addr)
             .serve(app.into_make_service())
             .await

@@ -11,12 +11,11 @@ use serenity::{
 
 use crate::{
     cache::{
-        LoggerCache, 
-        DatabaseCache
+        LoggerCache,
+        ConfigManagerCache
     }, 
-    models::{
-        command_config::CommandConfig, 
-        traits::GetFromDataBase
+    models::{ 
+        traits::GetFromDataBase, configs::cmd_allowed_ids::CmdAllowedIds
     },
     services::logger::{
         LogType::*,
@@ -32,8 +31,8 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     //Getting logger
     let log = data.get::<LoggerCache>().unwrap().read().await;
 
-    //Getting database
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
+    //Getting configs
+    let cfg_manager = data.get::<ConfigManagerCache>().unwrap().read().await;
 
     let author_roles = match &msg.member {
         Some(member) => member.roles.clone(),
@@ -43,14 +42,14 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     let author_id = msg.author.id.0;
 
 
-    let cmd_configs = CommandConfig::get_many(&database, cmd_opts.names, Some("command_allowed_ids")).await;
+    let cmd_configs = cfg_manager.get_many::<CmdAllowedIds>(Some(cmd_opts.names)).await;
     
     let mut is_allowed = false;
 
     if cmd_configs.is_empty() { is_allowed = true };
 
     for (_key, config) in cmd_configs.iter() {
-        let ids = config.get_allowed_ids();
+        let ids = config.get_all_ids();
         if ids.contains(&author_id) { is_allowed = true; }
         
         for role_id in &author_roles {

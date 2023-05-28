@@ -3,7 +3,7 @@ use mongodb::{
     bson::{Document, doc},
     error:: Error,
     Client,
-    Collection
+    Collection, options::{UpdateOptions, FindOneAndUpdateOptions, ReturnDocument}
 };
 
 
@@ -31,6 +31,17 @@ impl Mongodb {
         }
 
         Ok(())
+    }
+
+    pub async fn update_or_insert_one(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+  
+        let options = FindOneAndUpdateOptions::builder().upsert(true).return_document(ReturnDocument::After).build();
+
+        let result = collection.find_one_and_update(query, update, options).await?;
+
+        Ok(result)
     }
 
     pub async fn insert_many(&self, database: &str, collection: &str, data: Vec<Document>) -> Result<(), Error> {

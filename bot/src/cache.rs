@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     error::Error,
     sync::Arc,
 };
@@ -11,15 +10,20 @@ use serenity::{
     prelude::{TypeMap, TypeMapKey},
 };
 
-use crate::services::commands::CommandManager;
-use crate::services::mongodb::Mongodb;
-use crate::services::logger::Logger;
+use crate::{
+    services::{
+        commands::CommandManager,
+        mongodb::Mongodb,
+        logger::Logger,
+    }, 
+    models::configs::config_manager::ConfigManager,
+};
 
 /** Caching **/
 
-pub struct ConfigCache;
-impl TypeMapKey for ConfigCache {
-    type Value = Arc<RwLock<HashMap<&'static str, String>>>;
+pub struct ConfigManagerCache;
+impl TypeMapKey for ConfigManagerCache {
+    type Value = Arc<RwLock<ConfigManager>>;
 }
 
 pub struct ShardManagerCache;
@@ -62,17 +66,13 @@ impl TypeMapKey for LoggerCache {
 
 pub async fn fill(
     data: Arc<RwLock<TypeMap>>,
-    prefix: &str,
-    id: u64,
+    config_manager: ConfigManager,
     shard_manager: Arc<tokio::sync::Mutex<ShardManager>>,
     database: Mongodb,
 ) -> Result<(), Box<dyn Error>> {
     let mut data = data.write().await;
-    let mut map = HashMap::<&str, String>::new();
 
-    map.insert("BOT_PREFIX", String::from(prefix));
-    map.insert("BOT_ID", id.to_string());
-    data.insert::<ConfigCache>(Arc::new(RwLock::new(map)));
+    data.insert::<ConfigManagerCache>(Arc::new(RwLock::new(config_manager)));
 
     data.insert::<ShardManagerCache>(shard_manager);
 
