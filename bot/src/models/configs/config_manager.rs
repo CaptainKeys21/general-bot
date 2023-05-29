@@ -88,6 +88,10 @@ impl ConfigManager {
         fetched_data
     }
 
+    pub fn get_all_configs(&self) -> HashMap<String, Document> {
+        self.configs.clone()
+    }
+
     pub async fn update_one<C: GeneralBotConfig>(&mut self, name: &str, data: C::Data) -> Result<(), Box<dyn Error>> {
         let query = doc! {
             "name": name.to_string(),

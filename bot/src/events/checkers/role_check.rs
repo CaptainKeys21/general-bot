@@ -15,7 +15,7 @@ use crate::{
         ConfigManagerCache
     }, 
     models::{ 
-        traits::GetFromDataBase, configs::cmd_allowed_ids::CmdAllowedIds
+        configs::cmd_allowed_ids::CmdAllowedIds
     },
     services::logger::{
         LogType::*,

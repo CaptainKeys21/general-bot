@@ -18,8 +18,8 @@ use serenity::model::{
     application::interaction::application_command::ApplicationCommandInteraction,
     prelude::{
         Message, 
-        interaction::application_command::CommandDataOption
-    },
+        interaction::application_command::CommandDataOption, PartialMember
+    }, user::User,
 };
 
 use std::{
@@ -31,6 +31,7 @@ use std::{
     sync::Arc
 };
 
+#[allow(dead_code)]
 pub enum LogType {
     Info,
     Waring,
@@ -56,7 +57,7 @@ pub enum CmdOrInt<'a> {
 
 pub struct Logger {
     database: Arc<Mongodb>,
-    //blocked_ids: Vec<u32>
+    blocked_ids: Vec<u64>
 }
 
 impl Logger {
@@ -64,8 +65,10 @@ impl Logger {
         pretty_env_logger::init();
         let database = Arc::new(database);
         
-
-        Logger { database }
+        Logger { 
+            database,
+            blocked_ids: Vec::new(), 
+        }
     }
 
     pub fn default(&self, level: LogType, msg: &str) {
@@ -93,6 +96,10 @@ impl Logger {
     }
 
     pub fn message(&self, level: LogType, msg: &Message) {
+        if self.check_blocked_ids(&msg.author, &msg.member) {
+            return;
+        }
+
         let log_message = format!("Message ({}) | {} => {}",
             msg.channel_id.0,
             msg.author.tag(),
@@ -234,5 +241,31 @@ impl Logger {
         }
 
         return_string
+    }
+
+    pub fn update_blocklist(&mut self, ids: Vec<u64>) {
+        self.blocked_ids.extend(ids.iter());
+        self.blocked_ids.sort();
+        self.blocked_ids.dedup();
+    }
+
+    fn check_blocked_ids(&self, user: &User, member: &Option<PartialMember>) -> bool {
+        let mut ids: Vec<u64> = Vec::new();
+
+        ids.push(user.id.0);
+  
+        if let Some(m) = member {
+            for role_id in &m.roles {
+                ids.push(role_id.0);
+            }
+        };
+
+        for id in &self.blocked_ids {
+            if ids.contains(id) {
+                return true;
+            }
+        }
+
+        false
     }
 }

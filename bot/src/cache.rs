@@ -16,7 +16,7 @@ use crate::{
         mongodb::Mongodb,
         logger::Logger,
     }, 
-    models::configs::config_manager::ConfigManager,
+    models::configs::{config_manager::ConfigManager, logger_blocklist::LoggerBlocklist},
 };
 
 /** Caching **/
@@ -81,7 +81,17 @@ pub async fn fill(
 
     data.insert::<DatabaseCache>(Arc::new(RwLock::new(database.clone())));
 
-    let logger = Logger::new(database.clone());
+    let mut logger = Logger::new(database.clone());
+    {
+        if let Some(cfg_mngr) = data.get::<ConfigManagerCache>() {
+            let c_manager = cfg_mngr.read().await;
+
+            if let Ok(block_list) = c_manager.get_one::<LoggerBlocklist>(LoggerBlocklist::NAME).await {
+                logger.update_blocklist(block_list.get_all_ids());
+            };
+        }
+    }
+
     data.insert::<LoggerCache>(Arc::new(RwLock::new(logger)));
 
     Ok(())
