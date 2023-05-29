@@ -19,7 +19,8 @@ use crate::{
 #[hook]
 pub async fn after(ctx: &Context, msg: &Message, command_name: &str, _command_result: CommandResult) {
     let data = ctx.data.read().await;
-    let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(Info, command_name, Command(msg), Some("END"));
-
+    if let Some(log) = data.get::<LoggerCache>() {
+        let logger = log.read().await;
+        logger.command(Info, command_name, Command(msg), Some("END"));
+    };
 }

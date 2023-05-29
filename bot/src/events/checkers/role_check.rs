@@ -29,10 +29,24 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     let data = ctx.data.read().await;
 
     //Getting logger
-    let log = data.get::<LoggerCache>().unwrap().read().await;
+    let logger = data.get::<LoggerCache>();
 
     //Getting configs
-    let cfg_manager = data.get::<ConfigManagerCache>().unwrap().read().await;
+    let cfg_manager = match data.get::<ConfigManagerCache>() {
+        Some(m) => m.read().await,
+        None => {
+            match logger {
+                Some(log) => {
+                    log.read().await.command(Waring, cmd_opts.names[0], Command(&msg), Some("Config Manager not found"));
+                },
+                None => {
+                    log::warn!("Config Manager not found");
+                }
+            };
+
+            return Ok(());
+        }
+    };
 
     let author_roles = match &msg.member {
         Some(member) => member.roles.clone(),
@@ -58,7 +72,6 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
     }
 
     if !is_allowed {
-        log.command(Error, cmd_opts.names[0], Command(&msg), None);
         return Err(Reason::User("Sem cargos necessários".to_string()));
     }
 

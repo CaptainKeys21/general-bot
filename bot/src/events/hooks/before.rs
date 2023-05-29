@@ -15,8 +15,10 @@ use crate::{
 #[hook]
 pub async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
     let data = ctx.data.read().await;
-    let log = data.get::<LoggerCache>().unwrap().read().await;
-    log.command(Info, command_name, Command(msg), Some("START"));
+    if let Some(log) = data.get::<LoggerCache>() {
+        let logger = log.read().await;
+        logger.command(Info, command_name, Command(msg), Some("START"));
+    };
 
     true
 }

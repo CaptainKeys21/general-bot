@@ -113,7 +113,13 @@ impl Logger {
             LogType::Debug => log::debug!("{}", log_message),
         }
 
-        let message_log = msg.serialize(Serializer::new()).unwrap();
+        let message_log = match msg.serialize(Serializer::new()) {
+            Ok(b) => b,
+            Err(why) => {
+                log::error!("[Logger] => bson error: {}", why);
+                return;
+            }
+        };
         let date_now = Utc::now();
         let data = doc! {
             "logType": level.to_string(),
@@ -154,7 +160,13 @@ impl Logger {
                     }
                 }
             
-                let command_author = msg.author.serialize(Serializer::new()).unwrap();
+                let command_author = match msg.author.serialize(Serializer::new()) {
+                    Ok(b) => b,
+                    Err(why) => {
+                        log::error!("[Logger] => bson error: {}", why);
+                        return;
+                    }
+                };
 
                 let date_now = Utc::now();
 
@@ -192,9 +204,21 @@ impl Logger {
                     }
                 }
 
-                let command_author = int.user.serialize(Serializer::new()).unwrap();
+                let command_author = match int.user.serialize(Serializer::new()) {
+                    Ok(b) => b,
+                    Err(why) => {
+                        log::error!("[Logger] => bson error: {}", why);
+                        return;
+                    }
+                };
 
-                let interaction_data = int.data.serialize(Serializer::new()).unwrap();
+                let interaction_data = match int.data.serialize(Serializer::new()) {
+                    Ok(b) => b,
+                    Err(why) => {
+                        log::error!("[Logger] => bson error: {}", why);
+                        return;
+                    }
+                };
 
                 let date_now = Utc::now();
 

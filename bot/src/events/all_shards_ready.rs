@@ -21,8 +21,10 @@ impl ShardsReadyHandler for Handler {
 
         // register commands globally in release
 
-        let mut cmd_mgr = data.get::<CommandCache>().unwrap().write().await;
-        cmd_mgr.register_commands_global(ctx).await;
+        if let Some(c_manager) = data.get::<CommandCache>() {
+            let mut cmd_mgr = c_manager.write().await;
+            cmd_mgr.register_commands_global(ctx).await;
+        };
        
     }
 }

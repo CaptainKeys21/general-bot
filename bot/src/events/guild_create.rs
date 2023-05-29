@@ -1,13 +1,19 @@
-use serde::Serialize;
 use serenity::{
     model::prelude::Guild,
     prelude::Context,
 };
-use crate::{cache::CommandCache, models::{member::BotMember, roles::BotRoles, channels::BotChannels, emoji::BotEmoji}};
-use bson::Serializer;
+use crate::{
+    // cache::CommandCache, 
+    models::{
+        member::BotMember, 
+        roles::BotRoles, 
+        channels::BotChannels, 
+        emoji::BotEmoji
+    }
+};
 
 
-pub async fn guild_create(ctx: Context, guild: Guild, is_new: bool) {
+pub async fn guild_create(ctx: Context, guild: Guild, _is_new: bool) {
     // let data = ctx.data.read().await;
 
     // // register commands globally in release

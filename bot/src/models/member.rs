@@ -11,7 +11,10 @@ pub struct BotMember;
 impl BotMember {
     pub async fn full_update(ctx: &Context, guild_id: u64) -> Result<(), Box<dyn Error>> {
         let data = ctx.data.read().await;
-        let database = data.get::<DatabaseCache>().unwrap().read().await;
+        let database = match data.get::<DatabaseCache>() {
+            Some(d) => d.read().await,
+            None => return Err("database not found in cache".into()),
+        };
 
         database.clear_collection("GeneralBot", "members").await?;
 

@@ -120,7 +120,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut client = serenity::Client::builder(token, intents)
         .framework(framework)
         .event_handler(events::Handler)
-        .application_id(app_id.parse::<u64>().unwrap())
+        .application_id(app_id.parse::<u64>()?)
         .await?;
 
     let client_data = client.data.clone();
@@ -139,15 +139,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // run our app with hyper
         // `axum::Server` is a re-export of `hyper::Server`
         let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
-            .await
-            .unwrap();
+        if let Err(why) = axum::Server::bind(&addr).serve(app.into_make_service()).await {
+            println!("Application api error: {}", why);
+        };
     });
 
     // Start Client
     if let Err(why) = client.start_autosharded().await {
-        println!("Erro ao iniciar o cliente: {}", why);
+        println!("Client start error: {}", why);
     }
 
     Ok(())

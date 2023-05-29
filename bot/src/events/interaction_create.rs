@@ -17,15 +17,25 @@ pub async fn interaction_create(ctx: Context, interaction: Interaction) {
     if let Interaction::ApplicationCommand(command) = interaction {
         let data_read = ctx.data.read().await;
 
-        let commands = data_read.get::<CommandCache>().unwrap().read().await;
-        let log = data_read.get::<LoggerCache>().unwrap().read().await;
+        let log = data_read.get::<LoggerCache>();
 
-        log.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None);
+        let command_manager = match data_read.get::<CommandCache>() {
+            Some(m) => m.read().await,
+            None => {
+                if let Some(log) = log {
+                    log.read().await.default(Error, "Command Manager not found");
+                }
+                return;
+            }
+        };
 
-        match commands.on_command(&ctx, &command).await {
-            Ok(_) => {}
-            Err(e) => {
-                println!("Erro ao executar interação: {}", e);
+        if let Some(log) = log {
+            log.read().await.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None);
+        }
+
+        if let Err(why) = command_manager.on_command(&ctx, &command).await {
+            if let Some(log) = log {
+                log.read().await.default(Error, &format!("Command Manager error: {}", why));
             }
         }
     }
