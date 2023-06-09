@@ -2,6 +2,7 @@ extern crate pretty_env_logger;
 extern crate log;
 
 use serde::Serialize;
+use crate::utils::gb_serializer::Serializer;
 use chrono::Utc;
 use tokio::task;
 
@@ -10,8 +11,7 @@ use crate::services::mongodb::Mongodb;
 use mongodb::bson::{
     doc, 
     DateTime, 
-    ser::Serializer
-
+    // ser::Serializer
 };
 
 use serenity::model::{
