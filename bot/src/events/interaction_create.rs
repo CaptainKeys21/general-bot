@@ -6,7 +6,7 @@ use serenity::{
 };
 
 use crate::{
-    cache::{CommandCache, LoggerCache, ShardManagerCache}, 
+    cache::{LoggerCache, ShardManagerCache}, 
     services::logger::{
         CmdOrInt,
         LogType::*
@@ -24,26 +24,6 @@ pub async fn interaction_create(ctx: Context, interaction: Interaction, options:
                 logger.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None);
             };
         }
-
-        // let command_manager = match data_read.get::<CommandCache>() {
-        //     Some(m) => m.read().await,
-        //     None => {
-        //         if let Some(log) = log {
-        //             log.read().await.default(Error, "Command Manager not found");
-        //         }
-        //         return;
-        //     }
-        // };
-
-        // if let Some(log) = log {
-        //     log.read().await.command(Info, &command.data.name, CmdOrInt::Interaction(&command), None);
-        // }
-
-        // if let Err(why) = command_manager.on_command(&ctx, &command).await {
-        //     if let Some(log) = log {
-        //         log.read().await.default(Error, &format!("Command Manager error: {}", why));
-        //     }
-        // }
     }
 
     if let Some(shard_manager) = data.get::<ShardManagerCache>() {
