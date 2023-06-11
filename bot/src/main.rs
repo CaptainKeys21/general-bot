@@ -9,16 +9,19 @@ mod api;
 use api::router::build_router;
 use cache::ConfigManagerCache;
 use models::configs::general::GeneralConfig;
+use poise::{PrefixFrameworkOptions, PartialContext};
 use serenity::{
-    framework::{
-        StandardFramework,
-    },
     http::Http,
     prelude::GatewayIntents,
+    Error as SerenityError
 };
 
 
-use std::net::SocketAddr;
+
+use std::{
+    net::SocketAddr, 
+    sync::Arc
+};
 
 use std::{
     collections::HashSet,
@@ -28,10 +31,18 @@ use std::{
 
 use crate::models::configs::config_manager::ConfigManager;
 use crate::services::mongodb::Mongodb;
-use crate::events::hooks;
+use crate::events::{
+    checkers::command_check,
+    hooks::{
+        before::pre_command,
+        after::post_command,
+        dispatch_error::on_error,
+    }
+};
 use crate::commands::{
-    GENERAL_GROUP,
-    ADMIN_GROUP
+    // GENERAL_GROUP,
+    // ADMIN_GROUP
+    general::ping::ping
 };
 
 #[tokio::main]
@@ -85,41 +96,47 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    //Framework build
-    let framework = StandardFramework::new()
-        .configure(|c| {
-            c.owners(owners);
-            c.prefix("!gen>");
-            c.dynamic_prefix(|ctx, _| {
-                Box::pin(async move { 
-                    let data = ctx.data.read().await;
-                    let cfg_manager = data.get::<ConfigManagerCache>()?.read().await;
-                    let prefix = cfg_manager.get_one::<GeneralConfig>("prefix").await;
-
-                    match prefix {
-                        Ok(d) => Some(d.data),
-                        Err(_) => None
-                    }
-                })
-            });
-
-            c
-        })
-        .before(hooks::before::before)
-        .after(hooks::after::after)
-        .on_dispatch_error(hooks::dispatch_error::dispatch_error)
-        .group(&GENERAL_GROUP)
-        .group(&ADMIN_GROUP)
-        .bucket("nospam", |b| b.delay(3).time_span(10).limit(3))
-        .await;
-
     // All intents because fuck it why not?
     let intents = GatewayIntents::all();
 
+    let prefix_options = PrefixFrameworkOptions {
+        dynamic_prefix: Some(|ctx: PartialContext<'_, (), SerenityError>| {
+            Box::pin(async move { 
+                let data = ctx.serenity_context.data.read().await;
+                let prefix = match data.get::<ConfigManagerCache>() {
+                    Some(cfg_manager) => cfg_manager.read().await.get_one::<GeneralConfig>("prefix").await,
+                    None => return Err(SerenityError::Other("Config Manager not found"))
+                };
+
+
+                let res = match prefix {
+                    Ok(d) => Some(d.data),
+                    Err(_) => None
+                };
+
+                Ok(res)
+            })
+        }),
+        ..Default::default()
+    };
+
+    //Create Handler
+    let mut handler = events::Handler {
+      options: poise::FrameworkOptions {
+        commands: vec![ping()],
+        on_error,
+        pre_command,
+        post_command,
+        owners,
+        prefix_options,
+        command_check: Some(command_check), 
+        ..Default::default()
+      }  
+    };
+    poise::set_qualified_names(&mut handler.options.commands);
     // Cliente builder
     let mut client = serenity::Client::builder(token, intents)
-        .framework(framework)
-        .event_handler(events::Handler)
+        .event_handler_arc(Arc::new(handler))
         .application_id(app_id.parse::<u64>()?)
         .cache_settings(| cfg | cfg.max_messages(100))
         .await?;

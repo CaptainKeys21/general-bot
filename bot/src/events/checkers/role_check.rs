@@ -1,13 +1,6 @@
-use serenity::{
-    framework::standard::{
-        macros::check, 
-        Args, 
-        CommandOptions, 
-        Reason
-    }, 
-    prelude::Context, 
-    model::prelude::Message
-};
+use poise::Context;
+use serenity::Error;
+
 
 use crate::{
     cache::{
@@ -17,16 +10,12 @@ use crate::{
     models::{ 
         configs::cmd_allowed_ids::CmdAllowedIds
     },
-    services::logger::{
-        LogType::*,
-        CmdOrInt::*,
-    }
+    services::logger::LogType
 };
 
-#[check]
-#[name = "Role"]
-pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts: &CommandOptions) -> Result<(), Reason> {
-    let data = ctx.data.read().await;
+
+pub async fn role_check(ctx: Context<'_, (), Error>) -> Result<bool, Error> {
+    let data = ctx.serenity_context().data.read().await;
 
     //Getting logger
     let logger = data.get::<LoggerCache>();
@@ -37,27 +26,26 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
         None => {
             match logger {
                 Some(log) => {
-                    log.read().await.command(Waring, cmd_opts.names[0], Command(&msg), Some("Config Manager not found"));
+                    log.read().await.default(LogType::Error, "Config Manager not found");
                 },
                 None => {
                     log::warn!("Config Manager not found");
                 }
             };
 
-            return Ok(());
+            return Ok(true);
         }
     };
 
-    let author_roles = match &msg.member {
+    let author_roles = match ctx.author_member().await {
         Some(member) => member.roles.clone(),
         None => Vec::new(),
     };
 
-    let author_id = msg.author.id.0;
+    let author_id = ctx.author().id.0;
 
+    let cmd_configs =  cfg_manager.get_many::<CmdAllowedIds>(Some(&[&ctx.command().name])).await; 
 
-    let cmd_configs = cfg_manager.get_many::<CmdAllowedIds>(Some(cmd_opts.names)).await;
-    
     let mut is_allowed = false;
 
     if cmd_configs.is_empty() { is_allowed = true };
@@ -71,10 +59,5 @@ pub async fn role_check(ctx: &Context, msg: &Message, _args: &mut Args, cmd_opts
         }
     }
 
-    if !is_allowed {
-        return Err(Reason::User("Sem cargos necessários".to_string()));
-    }
-
-
-    Ok(())
+    Ok(is_allowed)
 }

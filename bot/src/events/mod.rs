@@ -11,6 +11,7 @@ pub mod message_update;
 pub mod message_delete;
 pub mod message_delete_bulk;
 
+use serenity::Error;
 use serenity::model::prelude::{Guild, Member, GuildId, Message, MessageUpdateEvent, ChannelId, MessageId};
 use serenity::model::user::User;
 use serenity::{
@@ -24,7 +25,9 @@ use serenity::{
 };
 
 // Event handler from serenity
-pub struct Handler;
+pub struct Handler {
+    pub options: poise::FrameworkOptions<(), Error>
+}
 
 
 
@@ -35,15 +38,15 @@ impl EventHandler for Handler {
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {guild_create::guild_create(ctx, guild, is_new).await;}
 
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {interaction_create::interaction_create(ctx, interaction).await;}
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {interaction_create::interaction_create(ctx, interaction, &self.options).await;}
 
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {guild_member_addition::guild_member_addition(ctx, new_member).await;}
     
     async fn guild_member_removal(&self, ctx: Context, guild_id: GuildId, user: User, member: Option<Member>) {guild_member_removal::guild_member_removal(ctx, guild_id, user, member).await;}
 
-    async fn message(&self, ctx: Context, new_message: Message) {message::message(ctx, new_message).await;}
+    async fn message(&self, ctx: Context, new_message: Message) {message::message(ctx, new_message, &self.options).await;}
 
-    async fn message_update(&self, ctx: Context, old: Option<Message>, new: Option<Message>, event: MessageUpdateEvent) {message_update::message_update(ctx, old, new, event).await;}
+    async fn message_update(&self, ctx: Context, old: Option<Message>, new: Option<Message>, event: MessageUpdateEvent) {message_update::message_update(ctx, old, new, event, &self.options).await;}
     
     async fn message_delete(&self, ctx: Context, channel_id: ChannelId, deleted_message_id: MessageId, guild_id: Option<GuildId>) {message_delete::message_delete(ctx, channel_id, deleted_message_id, guild_id).await;}
 

@@ -12,7 +12,6 @@ use serenity::{
 
 use crate::{
     services::{
-        commands::CommandManager,
         mongodb::Mongodb,
         logger::Logger,
     }, 
@@ -29,29 +28,6 @@ impl TypeMapKey for ConfigManagerCache {
 pub struct ShardManagerCache;
 impl TypeMapKey for ShardManagerCache {
     type Value = Arc<Mutex<ShardManager>>;
-}
-
-// pub struct MessageCacheEntry {
-//     pub our_msg: Message,
-//     pub original_msg: Message,
-// }
-// impl MessageCacheEntry {
-//     pub fn new(our_msg: Message, original_msg: Message) -> Self {
-//         MessageCacheEntry {
-//             our_msg,
-//             original_msg,
-//         }
-//     }
-// }
-
-// pub struct MessageCache;
-// impl TypeMapKey for MessageCache {
-//     type Value = Arc<Mutex<LruCache<u64, MessageCacheEntry>>>;
-// }
-
-pub struct CommandCache;
-impl TypeMapKey for CommandCache {
-    type Value = Arc<RwLock<CommandManager>>;
 }
 
 pub struct DatabaseCache;
@@ -75,9 +51,6 @@ pub async fn fill(
     data.insert::<ConfigManagerCache>(Arc::new(RwLock::new(config_manager)));
 
     data.insert::<ShardManagerCache>(shard_manager);
-
-    //let commands = CommandManager::new();
-    //data.insert::<CommandCache>(Arc::new(RwLock::new(commands)));
 
     data.insert::<DatabaseCache>(Arc::new(RwLock::new(database.clone())));
 
