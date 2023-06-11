@@ -10,8 +10,9 @@ use crate::services::mongodb::Mongodb;
 
 use mongodb::bson::{
     doc, 
+    Bson,
     DateTime, 
-    // ser::Serializer
+    // ser::Serializer,
 };
 
 use serenity::model::{
@@ -53,6 +54,11 @@ impl Display for LogType {
 pub enum CmdOrInt<'a> {
     Command(&'a Message),
     Interaction(&'a ApplicationCommandInteraction)
+}
+
+pub enum MsgUpdateLog {
+    Edited,
+    Deleted,
 }
 
 pub struct Logger {
@@ -125,6 +131,8 @@ impl Logger {
             "logType": level.to_string(),
             "data": message_log,
             "time": DateTime::from_chrono(date_now),
+            "editedAt": Bson::Null,
+            "deletedAt": Bson::Null,
         };
 
         let task_database = Arc::clone(&self.database);
@@ -132,6 +140,28 @@ impl Logger {
             if let Err(e) = task_database.insert_one("Logger", "messages", data).await {
                 log::error!("{}", e);
             };
+        });
+    }
+
+    pub fn update_message_log(&self, old_id: u64, operation: MsgUpdateLog) {
+        let query = doc! { "data.id": old_id.to_string() };
+        let date_now = Utc::now();
+        let update = match operation {
+            MsgUpdateLog::Edited => doc! { "$set": {"editedAt": DateTime::from_chrono(date_now)} },
+            MsgUpdateLog::Deleted => doc! { "$set": {"deletedAt": DateTime::from_chrono(date_now)} },
+        };
+        
+        let task_database = Arc::clone(&self.database);
+
+        task::spawn(async move {
+            let res = match operation {
+                MsgUpdateLog::Edited => task_database.update_one("Logger", "messages", query, update).await,
+                MsgUpdateLog::Deleted => task_database.update_many("Logger", "messages", query, update).await
+            };
+
+            if let Err(e) = res {
+                log::error!("{}", e);
+            }
         });
     }
 

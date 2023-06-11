@@ -121,6 +121,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .framework(framework)
         .event_handler(events::Handler)
         .application_id(app_id.parse::<u64>()?)
+        .cache_settings(| cfg | cfg.max_messages(100))
         .await?;
 
     let client_data = client.data.clone();

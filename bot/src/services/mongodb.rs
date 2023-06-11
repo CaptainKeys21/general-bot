@@ -1,9 +1,10 @@
+use bson::to_document;
 use futures::{StreamExt};
 use mongodb::{
     bson::{Document, doc},
     error:: Error,
     Client,
-    Collection, options::{UpdateOptions, FindOneAndUpdateOptions, ReturnDocument}
+    Collection, options::{ FindOneAndUpdateOptions, ReturnDocument },
 };
 
 
@@ -33,6 +34,15 @@ impl Mongodb {
         Ok(())
     }
 
+    pub async fn update_one(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        let result = collection.find_one_and_update(query, update, None).await?;
+
+        Ok(result)
+    }
+
     pub async fn update_or_insert_one(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
@@ -56,6 +66,20 @@ impl Mongodb {
         }
 
         Ok(())
+    }
+
+    pub async fn update_many(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        let result = collection.update_many(query, update, None).await?;
+
+        let res_doc = match to_document(&result) {
+            Ok(d) => Some(d),
+            Err(_) => None
+        };
+
+        Ok(res_doc)
     }
 
     pub async fn get_one(&self, database: &str, collection: &str, filter: Document) -> Option<Document> {

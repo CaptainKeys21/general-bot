@@ -8,5 +8,4 @@ pub async fn message(ctx: Context, new_message: Message) {
         let logger = log.read().await;
         logger.message(LogType::Info, &new_message);
     };
-    
 }
