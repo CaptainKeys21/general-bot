@@ -1,11 +1,12 @@
-use bson::to_document;
+use urlencoding::encode;
 use futures::{StreamExt};
 use mongodb::{
     bson::{Document, doc},
     error:: Error,
     Client,
-    Collection, options::{ FindOneAndUpdateOptions, ReturnDocument },
+    Collection, options::{ FindOneAndUpdateOptions, ReturnDocument, FindOneOptions }, results::UpdateResult,
 };
+use serde::de::DeserializeOwned;
 
 
 #[derive(Clone)]
@@ -14,12 +15,16 @@ pub struct Mongodb {
 }
 
 impl Mongodb {
-    pub async fn new() -> Mongodb {
-        let new_client = Client::with_uri_str("mongodb://GENERAL_BOT:general%40bot@general-bot-database:27017").await.expect("Erro ao conectar na base de dados");
+    pub async fn new(uri: String) -> Result<Mongodb, Error> {
+        let new_client = Client::with_uri_str(uri).await?;
 
-        Mongodb {
+        Ok(Mongodb {
             client: new_client
-        }
+        })
+    }
+
+    pub fn make_uri(username: &str, password: &str, domain: &str, port: &str) -> String {
+        format!("mongodb://{}:{}@{}:{}", username, encode(password), domain, port)
     }
 
     pub async fn insert_one(&self, database: &str, collection: &str, data: Document) -> Result<(), Error> {
@@ -34,9 +39,9 @@ impl Mongodb {
         Ok(())
     }
 
-    pub async fn update_one(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
+    pub async fn update_one<T: DeserializeOwned>(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<T>, Error> {
         let db = self.client.database(database);
-        let collection = db.collection::<Document>(collection);
+        let collection = db.collection::<T>(collection);
 
         let result = collection.find_one_and_update(query, update, None).await?;
 
@@ -61,32 +66,25 @@ impl Mongodb {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
 
-        if let Err(e) = collection.insert_many(data, None).await {
-            return Err(e);
-        }
+        collection.insert_many(data, None).await?;
 
         Ok(())
     }
 
-    pub async fn update_many(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<Option<Document>, Error> {
+    pub async fn update_many(&self, database: &str, collection: &str, query: Document, update: Document) -> Result<UpdateResult, Error> {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
 
         let result = collection.update_many(query, update, None).await?;
 
-        let res_doc = match to_document(&result) {
-            Ok(d) => Some(d),
-            Err(_) => None
-        };
-
-        Ok(res_doc)
+        Ok(result)
     }
 
-    pub async fn get_one(&self, database: &str, collection: &str, filter: Document) -> Option<Document> {
+    pub async fn get_one<T: DeserializeOwned + Unpin + Send + Sync>(&self, database: &str, collection: &str, filter: Document, options: Option<FindOneOptions>) -> Result<Option<T>, Error> {
         let db = self.client.database(database);
-        let collection = db.collection::<Document>(collection);
+        let collection = db.collection::<T>(collection);
 
-        collection.find_one(filter, None).await.ok()?
+        collection.find_one(filter, options).await
     }
 
     pub async fn get_collection<T>(&self, database: &str, collection: &str) -> Collection<T> {
@@ -95,38 +93,30 @@ impl Mongodb {
         db.collection::<T>(collection)
     }
 
-    pub async fn get(&self, database: &str, collection: &str, filter: Document) -> Option<Vec<Document>>{
+    pub async fn get<T: DeserializeOwned + Unpin + Send + Sync>(&self, database: &str, collection: &str, filter: Document) -> Result<Vec<T>, Error>{
         let db = self.client.database(database);
-        let collection = db.collection::<Document>(collection);
+        let collection = db.collection::<T>(collection);
 
 
-        let cursor = collection.find(filter, None).await;
+        let mut cursor = collection.find(filter, None).await?;
 
-        match cursor {
-            Ok(mut cur) => {
-                let mut vec_doc: Vec<Document> = Vec::new();
 
-                while let Some(doc) = cur.next().await {
-                    if let Ok(d) = doc {
-                        vec_doc.push(d);
-                    }
-                }
-        
-                Some(vec_doc)
-            }
-            Err(_) => {
-                return None;
+        let mut vec_doc: Vec<T> = Vec::new();
+
+        while let Some(doc) = cursor.next().await {
+            if let Ok(d) = doc {
+                vec_doc.push(d);
             }
         }
+            
+        Ok(vec_doc)
     }
 
     pub async fn delete_one(&self, database: &str, collection: &str, filter: Document) -> Result<(), Error> {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
 
-        if let Err(e) = collection.delete_one(filter, None).await {
-            return Err(e);
-        }
+        collection.delete_one(filter, None).await?;
 
         Ok(())
     }
@@ -135,11 +125,18 @@ impl Mongodb {
         let db = self.client.database(database);
         let collection = db.collection::<Document>(collection);
 
-        if let Err(e) = collection.delete_many(doc! {}, None).await {
-            return Err(e)
-        };
+        collection.delete_many(doc! {}, None).await?;
 
         Ok(())
+    }
+
+    pub async fn count_collection_data(&self, database: &str, collection: &str, filter: Option<Document>) -> Result<u64, Error> {
+        let db = self.client.database(database);
+        let collection = db.collection::<Document>(collection);
+
+        let result = collection.count_documents(filter, None).await?;
+
+        Ok(result)
     }
 
 }

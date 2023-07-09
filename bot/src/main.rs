@@ -7,14 +7,13 @@ mod models;
 mod api;
 
 use api::router::build_router;
-use cache::ConfigManagerCache;
 use models::configs::general::GeneralConfig;
-use poise::{PrefixFrameworkOptions, PartialContext};
+use poise::PrefixFrameworkOptions;
 use serenity::{
     http::Http,
     prelude::GatewayIntents,
-    Error as SerenityError
 };
+use utils::setup::{dynamic_prefix, get_owners};
 
 
 
@@ -24,7 +23,6 @@ use std::{
 };
 
 use std::{
-    collections::HashSet,
     error::Error,
     env,
 };
@@ -40,17 +38,15 @@ use crate::events::{
     }
 };
 use crate::commands::{
-    // GENERAL_GROUP,
-    // ADMIN_GROUP
-    general::ping::ping
+    general::ping::ping,
+    admin::admin,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let database = Mongodb::new().await; // Database setup
-    // if let Err(e) = dotenv::from_filename("./config/bot.env") { // Enviroment variables setup
-    //     println!("Env file not found: {}", e);
-    // }
+    // Database setup
+    let db_uri = env::var("DATABASE_URI").expect("Expect database URI");
+    let database = Mongodb::new(db_uri).await?; 
 
     let c_manager = ConfigManager::new(database.clone()).await;
 
@@ -76,54 +72,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let http = Http::new(&token);
 
     // Getting application owners
-    let owners = match http.get_current_application_info().await {
-        Ok(info) => {
-            let mut owners = HashSet::new();
-
-            owners.insert(info.owner.id);
-
-            if let Some(team) = info.team {
-                for member in &team.members {
-                    owners.insert(member.user.id);
-                }
-            }
-
-            owners
-        }
-        Err(why) => {
-            println!("Erro ao acessar informações do bot: {}", why);
-            HashSet::new()
-        }
-    };
+    let owners = get_owners(&http).await;
 
     // All intents because fuck it why not?
     let intents = GatewayIntents::all();
 
     let prefix_options = PrefixFrameworkOptions {
-        dynamic_prefix: Some(|ctx: PartialContext<'_, (), SerenityError>| {
-            Box::pin(async move { 
-                let data = ctx.serenity_context.data.read().await;
-                let prefix = match data.get::<ConfigManagerCache>() {
-                    Some(cfg_manager) => cfg_manager.read().await.get_one::<GeneralConfig>("prefix").await,
-                    None => return Err(SerenityError::Other("Config Manager not found"))
-                };
-
-
-                let res = match prefix {
-                    Ok(d) => Some(d.data),
-                    Err(_) => None
-                };
-
-                Ok(res)
-            })
-        }),
+        dynamic_prefix: Some(dynamic_prefix),
         ..Default::default()
     };
 
     //Create Handler
     let mut handler = events::Handler {
       options: poise::FrameworkOptions {
-        commands: vec![ping()],
+        commands: vec![ping(), admin()],
         on_error,
         pre_command,
         post_command,

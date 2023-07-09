@@ -1,6 +1,6 @@
 use serenity::{builder::CreateEmbed, model::user::User};
 
-use super::constants::{COLOR_FAIL, COLOR_WARN, COLOR_OKAY};
+use crate::utils::constants::{COLOR_FAIL, COLOR_WARN, COLOR_OKAY};
 
 pub fn build_fail_embed(author: &User, err: &str) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
@@ -20,11 +20,11 @@ pub fn build_warn_embed(author: &User, warn: &str) -> CreateEmbed {
     embed
 }
 
-pub fn build_success_embed(author: &User, warn: &str) -> CreateEmbed {
+pub fn build_success_embed(author: &User, msg: &str) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
     embed.color(COLOR_OKAY);
-    embed.title("Impedido de executar:");
-    embed.description(warn);
+    embed.title("Executado com sucesso:");
+    embed.description(msg);
     embed.footer(|f| f.text(format!("Executado por: {}", author.tag())));
     embed
 }

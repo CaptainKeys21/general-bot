@@ -1,6 +1,7 @@
 extern crate pretty_env_logger;
 extern crate log;
 
+use bson::Document;
 use serde::Serialize;
 use crate::utils::gb_serializer::Serializer;
 use chrono::Utc;
@@ -154,14 +155,19 @@ impl Logger {
         let task_database = Arc::clone(&self.database);
 
         task::spawn(async move {
-            let res = match operation {
-                MsgUpdateLog::Edited => task_database.update_one("Logger", "messages", query, update).await,
-                MsgUpdateLog::Deleted => task_database.update_many("Logger", "messages", query, update).await
+            match operation {
+                MsgUpdateLog::Edited => {
+                    if let Err(e) = task_database.update_one::<Document>("Logger", "messages", query, update).await {
+                        log::error!("{}", e);
+                    };
+                    
+                },
+                MsgUpdateLog::Deleted => {
+                    if let Err(e) = task_database.update_many("Logger", "messages", query, update).await {
+                        log::error!("{}", e);
+                    }
+                }
             };
-
-            if let Err(e) = res {
-                log::error!("{}", e);
-            }
         });
     }
 

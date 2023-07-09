@@ -17,7 +17,7 @@ services:
     container_name: general-bot-main-development
     depends_on:
       - db
-    image: rust:1.67
+    image: general-bot-main:development
     ports:
       - 8080:8080
     volumes:
@@ -25,7 +25,7 @@ services:
     working_dir: /usr/src/bot
     env_file:
       - ./config/bot.env
-    command: ["cargo", "run"]
+    command: [ "cargo", "watch", "-x", "'run'" ]
 
   dev-api:
     container_name: general-bot-api-development

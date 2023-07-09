@@ -6,9 +6,9 @@ use poise::{
 use serenity::Error;
 
 use crate::{
-    utils::embeds::{
+    utils::embeds::default_messages::{
         build_fail_embed, 
-        build_warn_embed
+        build_warn_embed,
     }, 
 };
 
@@ -37,16 +37,18 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
             FrameworkError::ArgumentParse { ctx, input, error} => {
                 let usage = match ctx.command().help_text {
                     Some(help_text) => help_text(),
-                    None => "Please check the help menu for usage information".into(),
+                    None => "Por favor, veja o menu de ajuda para informações".into(),
                 };
+
                 let response = if let Some(input) = input {
                     format!(
-                        "**Cannot parse `{}` as argument: {}**\n{}",
+                        "**Não pode usar `{}` como um argumento: {}**\n{}",
                         input, error, usage
                     )
                 } else {
                     format!("**{}**\n{}", error, usage)
                 };
+                
                 if let Err(e) = ctx.send(|m| { 
                     m.embeds.push(build_fail_embed(&ctx.author(), &response)); 
                     m.ephemeral(true);
@@ -72,7 +74,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
                 ctx,
             } => {
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), &format!("Comando não pode ser executado sem as seguintes permissões: {}", missing_permissions))); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), &format!("Comando não pode ser executado sem as seguintes permissões: {}", missing_permissions))); 
                     m.ephemeral(true);
                     m
                 }).await {
@@ -98,7 +100,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
                     )
                 };
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), &response)); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), &response)); 
                     m.ephemeral(true);
                     m
                 }).await {
@@ -107,7 +109,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
             }
             FrameworkError::NotAnOwner { ctx } => {
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), "Apenas o dono do bot pode usar esse comando")); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), "Apenas o dono do bot pode usar esse comando")); 
                     m.ephemeral(true);
                     m
                 }).await {
@@ -116,7 +118,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
             }
             FrameworkError::GuildOnly { ctx } => {
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), "Não pode usar esse comando em DMs")); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), "Não pode usar esse comando em DMs")); 
                     m.ephemeral(true);
                     m
                 }).await {
@@ -125,7 +127,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
             }
             FrameworkError::DmOnly { ctx } => {
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), "Comando só pode ser utilizado em DMs")); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), "Comando só pode ser utilizado em DMs")); 
                     m.ephemeral(true);
                     m
                 }).await {
@@ -134,7 +136,7 @@ pub fn on_error(error: FrameworkError<'_, (), Error>) -> BoxFuture<'_, ()> {
             }
             FrameworkError::NsfwOnly { ctx } => {
                 if let Err(e) = ctx.send(|m| { 
-                    m.embeds.push(build_fail_embed(&ctx.author(), "Comando só pode ser usado em canais NSFW")); 
+                    m.embeds.push(build_warn_embed(&ctx.author(), "Comando só pode ser usado em canais NSFW")); 
                     m.ephemeral(true);
                     m
                 }).await {

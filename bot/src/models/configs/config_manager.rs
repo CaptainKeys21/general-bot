@@ -43,7 +43,7 @@ impl ConfigManager {
                     "name": name,
                     "config_type": C::TYPE
                 };
-                let db_data = self.database.get_one("GeneralBot", "config", filter).await;
+                let db_data = self.database.get_one::<Document>("GeneralBot", "config", filter, None).await?;
                 from_bson::<C::Data>(db_data.into())?
             }
         };
@@ -109,7 +109,7 @@ impl ConfigManager {
             },
             None => {
                 let filter = doc! { "name": name, "config_type": C::TYPE };
-                if let Some(doc) = self.database.get_one("GeneralBot", "config", filter).await {
+                if let Some(doc) = self.database.get_one::<Document>("GeneralBot", "config", filter, None).await? {
                     self.configs.insert(self.make_config_key(name, C::TYPE), doc);
                 };
             }

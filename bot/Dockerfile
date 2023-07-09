@@ -1,9 +1,7 @@
-FROM rust:1.67
+FROM rust:1.70 as development
 
 WORKDIR /usr/src/bot
-COPY . .
 
-RUN cargo install --path .
-#RUN cargo run
+RUN cargo install cargo-watch
 
-CMD ["general-bot"]
+
