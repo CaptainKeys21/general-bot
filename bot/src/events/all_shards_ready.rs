@@ -3,9 +3,7 @@ use serenity::{
     async_trait,
 };
 
-use crate::{
-    events::Handler,
-};
+use crate::events::Handler;
 
 // Shard event handler
 #[async_trait]

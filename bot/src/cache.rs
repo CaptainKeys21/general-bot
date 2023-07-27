@@ -3,15 +3,11 @@ use std::{
     sync::Arc,
 };
 
-use tokio::sync::{Mutex, RwLock, RwLockReadGuard};
-
-use chrono::FixedOffset;
+use tokio::sync::{Mutex, RwLock};
 
 use serenity::{
     client::bridge::gateway::ShardManager,
     prelude::{TypeMap, TypeMapKey},
-    Error as SerenityError,
-    async_trait
 };
 
 use crate::{
@@ -21,7 +17,7 @@ use crate::{
     }, 
     models::configs::{
         config_manager::ConfigManager, 
-        logger_blocklist::LoggerBlocklist, general::GeneralConfig
+        logger_blocklist::LoggerBlocklist,
     },
 };
 
