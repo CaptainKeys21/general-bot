@@ -5,14 +5,13 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        GeneralBotPunishments,
-        PunishManager,
-        kick::MemberKick,
+    models::{
+        context::ContextDataGetters,
+        punishments::{
+            GeneralBotPunishments,
+            PunishManager,
+            kick::MemberKick,
+        }, 
     }, 
     utils::constants::COLOR_FAIL, 
     services::logger::LogType
@@ -33,8 +32,7 @@ pub async fn kick(
     #[description = "Motivo"]reason: String
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
     
     member.kick_with_reason(ctx.http(), &reason).await?;
     

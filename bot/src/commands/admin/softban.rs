@@ -5,13 +5,12 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        PunishManager,
-        softban::MemberSoftBan, GeneralBotPunishments,
+    models::{
+        context::ContextDataGetters,
+        punishments::{
+            PunishManager,
+            softban::MemberSoftBan, GeneralBotPunishments,
+        }, 
     }, 
     utils::constants::COLOR_FAIL, 
     services::logger::LogType
@@ -33,8 +32,7 @@ pub async fn softban(
     #[description = "Deletar X dias de mensagem (padrão 7)"]days_message: Option<u8>
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
     
     member.ban_with_reason(ctx.http(), days_message.unwrap_or(7), &reason).await?;
     member.unban(ctx.http()).await?;

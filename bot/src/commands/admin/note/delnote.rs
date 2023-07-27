@@ -5,11 +5,7 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::notes::MemberNote, 
+    models::{notes::MemberNote, context::ContextDataGetters}, 
     services::logger::LogType, utils::constants::COLOR_WARN
 };
 
@@ -28,8 +24,7 @@ pub async fn delnote(
     #[description = "Numero da nota"]index: u64,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     let note = match MemberNote::get_one_from_member(&database, member.user.id, ctx.guild_id(), index - 1).await {
         Ok(n) => {

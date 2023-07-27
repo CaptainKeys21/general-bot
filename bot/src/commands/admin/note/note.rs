@@ -5,11 +5,7 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::notes::MemberNote, 
+    models::{notes::MemberNote, context::ContextDataGetters}, 
     services::logger::LogType, utils::constants::COLOR_INFO
 };
 
@@ -28,8 +24,7 @@ pub async fn note(
     #[description = "Texto"]#[rest]content: String,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     match MemberNote::new_entry(&database, member.user.id, ctx.guild_id(), ctx.author().id, content).await {
         Ok(new_note) => {

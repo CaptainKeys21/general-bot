@@ -5,13 +5,12 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        PunishManager,
-        ban::MemberBan
+    models::{
+        context::ContextDataGetters,
+        punishments::{
+            PunishManager,
+            ban::MemberBan
+        }, 
     },
     utils::constants::COLOR_OKAY, 
     services::logger::LogType
@@ -24,15 +23,14 @@ fn help() -> String {
     ")
 }
 
-#[command(prefix_command, slash_command, guild_only, help_text_fn="help")] // 985539685944287292 https://discord.gg/pCzuzqByQZ
+#[command(prefix_command, slash_command, guild_only, help_text_fn="help")]
 pub async fn unban(
     ctx: Context<'_, (), Error>, 
     #[description = "Membro"]user_id: UserId,
     #[description = "Motivo"]reason: String
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     if let Some(guild_id) = ctx.guild_id() {
         ctx.http().remove_ban(guild_id.0, user_id.0, Some(&reason)).await?;

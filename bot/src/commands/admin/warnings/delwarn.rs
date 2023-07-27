@@ -5,13 +5,12 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        PunishManager,
-        warn::MemberWarn,
+    models::{
+        context::ContextDataGetters,
+        punishments::{
+            PunishManager,
+            warn::MemberWarn,
+        }, 
     }, 
     utils::constants::{COLOR_OKAY, COLOR_WARN}, 
     services::logger::LogType
@@ -31,8 +30,7 @@ pub async fn delwarn(
     #[description = "Motivo"]#[lazy]reason: Option<String>,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     match PunishManager::get_latest_by_member::<MemberWarn>(&database, member.user.id).await {
         Ok(warn) => {

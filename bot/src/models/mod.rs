@@ -6,3 +6,4 @@ pub mod emoji;
 pub mod configs;
 pub mod punishments;
 pub mod notes;
+pub mod context;

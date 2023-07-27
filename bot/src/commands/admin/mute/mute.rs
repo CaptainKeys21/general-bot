@@ -1,4 +1,4 @@
-use chrono::{Utc, FixedOffset};
+use chrono::Utc;
 use poise::{Context, command};
 use serenity::{
     model::{guild::Member, Timestamp}, http::CacheHttp,
@@ -6,15 +6,11 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
+    models::{punishments::{
         GeneralBotPunishments,
         PunishManager,
         mute::MemberMute,
-    }, 
+    }, context::ContextDataGetters}, 
     utils::{constants::COLOR_WARN, functions::time_string_to_seconds}, 
     services::logger::LogType
 };
@@ -35,8 +31,8 @@ pub async fn mute(
     #[description = "Tempo (s/m/h/D/M/Y)"]#[rest]time: String,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
+    let timezone = data.get_timezone().await?;
 
     let mute_duration = match time_string_to_seconds(time) {
         Ok(t) => t,
@@ -61,7 +57,7 @@ pub async fn mute(
                 m.embed(|e| 
                     e.title("Membro Mutado")
                         .color(COLOR_WARN)
-                        .description(format!("<@{}> mutado até *{}*\n**Motivo:** {}", new_mute.member, new_mute.get_formated_duration(&FixedOffset::west_opt(3* 3600).unwrap()), new_mute.reason))
+                        .description(format!("<@{}> mutado até *{}*\n**Motivo:** {}", new_mute.member, new_mute.get_formated_duration(&timezone), new_mute.reason))
                 );
                 m
             }).await?;

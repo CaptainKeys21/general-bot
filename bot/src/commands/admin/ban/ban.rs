@@ -5,14 +5,13 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        GeneralBotPunishments,
-        PunishManager,
-        ban::MemberBan
+    models::{
+        punishments::{
+            GeneralBotPunishments,
+            PunishManager,
+            ban::MemberBan
+        }, 
+        context::ContextDataGetters,
     }, 
     utils::constants::COLOR_FAIL, 
     services::logger::LogType
@@ -33,8 +32,7 @@ pub async fn ban(
     #[description = "Motivo"]reason: String
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     member.ban_with_reason(ctx.http(), 7, &reason).await?;
         

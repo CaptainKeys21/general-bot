@@ -5,11 +5,7 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::notes::MemberNote, 
+    models::{notes::MemberNote, context::ContextDataGetters}, 
     services::logger::LogType,
 };
 
@@ -27,8 +23,7 @@ pub async fn clearnotes(
     #[description = "Membro"]member: Member,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     let num_notes = match MemberNote::clear(&database, member.user.id, ctx.author().id).await {
         Ok(n) => n,

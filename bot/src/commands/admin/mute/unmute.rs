@@ -6,14 +6,10 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
+    models::{punishments::{
         PunishManager,
         mute::MemberMute,
-    }, 
+    }, context::ContextDataGetters}, 
     utils::constants::COLOR_OKAY, 
     services::logger::LogType
 };
@@ -33,8 +29,7 @@ pub async fn unmute(
     #[description = "Motivo"]#[lazy]reason: Option<String>,
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     member.enable_communication(ctx.http()).await?;
 

@@ -5,14 +5,13 @@ use serenity::{
 };
 
 use crate::{
-    cache::{
-        DatabaseCache, 
-        LoggerCache
-    }, 
-    models::punishments::{
-        PunishManager,
-        warn::MemberWarn, 
-        GeneralBotPunishments,
+    models::{
+        context::ContextDataGetters,
+        punishments::{
+            PunishManager,
+            warn::MemberWarn, 
+            GeneralBotPunishments,
+        }, 
     }, 
     services::logger::LogType, utils::constants::COLOR_WARN
 };
@@ -34,8 +33,7 @@ pub async fn warn(
     #[description = "Publico"]#[flag]public: bool
 ) -> Result<(), Error> {
     let data = ctx.serenity_context().data.read().await;
-    let database = data.get::<DatabaseCache>().unwrap().read().await;
-    let logger = data.get::<LoggerCache>().unwrap().read().await;
+    let (database, logger) = data.get_essentials().await?;
 
     let new_warn = MemberWarn::new(ctx.guild_id(), member.user.id, reason, ctx.author().id);
 

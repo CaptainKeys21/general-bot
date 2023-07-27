@@ -13,7 +13,8 @@ use crate::api::routes::{
     root::root,
     prefix::update_prefix,
     logger_blocklist::set_blocklist,
-    get_configs::get_configs
+    get_configs::get_configs,
+    timezone::set_timezone
 };
 
 pub fn build_router(data: Arc<RwLock<TypeMap>>) -> Router {
@@ -22,6 +23,7 @@ pub fn build_router(data: Arc<RwLock<TypeMap>>) -> Router {
         .route("/api/configs", get(get_configs))
         .route("/api/prefix", put(update_prefix))
         .route("/api/logger_blocklist", put(set_blocklist))
+        .route("/api/timezone", put(set_timezone))
         .with_state(data);
 
     router
