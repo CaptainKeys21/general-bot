@@ -1,36 +1,20 @@
 use poise::{
     BoxFuture, 
     Context, 
-    ApplicationCommandOrAutocompleteInteraction::ApplicationCommand
 
 };
 use serenity::Error;
 
 use crate::{
-    services::logger::{
-        CmdOrInt::Command,
-        CmdOrInt::Interaction,
-        LogType::*
-    },
-    cache::LoggerCache,
+    services::logger::LogType::*,
+    models::context::ContextDataGetters,
 };
 
 pub fn post_command(ctx: Context<'_, (), Error>) -> BoxFuture<'_, ()> {
     Box::pin(async move {
         let data = ctx.serenity_context().data.read().await;
-        let command_name = &ctx.command().name;
-        if let Some(log) = data.get::<LoggerCache>() {
-            let logger = log.read().await;
-            match &ctx {
-                Context::Prefix(ctx_pfx) => {
-                    logger.command(Info, command_name, Command(ctx_pfx.msg), Some("END"));
-                }
-                Context::Application(ctx_app) => {
-                    if let ApplicationCommand(int) = ctx_app.interaction {
-                        logger.command(Info, command_name, Interaction(int), Some("END"));
-                    }
-                }
-            }
+        if let Ok ((_, logger)) = data.get_essentials().await {
+            logger.command(Info, &ctx, Some("END"));
         };
     })
 }

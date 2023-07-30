@@ -13,22 +13,25 @@ use mongodb::bson::{
     doc, 
     Bson,
     DateTime, 
-    // ser::Serializer,
 };
+
+use poise::{Context, Command, CommandParameter};
+use serenity::Error;
 
 use serenity::model::{
-    application::interaction::application_command::ApplicationCommandInteraction,
     prelude::{
         Message, 
-        interaction::application_command::CommandDataOption, PartialMember
-    }, user::User,
+        PartialMember
+    }, 
+    user::User,
 };
 
+use std::error::Error as StdError;
 use std::{
     fmt::{
         Display, 
-        Formatter, 
-        Result
+        Formatter,
+        Result as FmtResult
     }, 
     sync::Arc
 };
@@ -42,7 +45,7 @@ pub enum LogType {
 }
 
 impl Display for LogType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
             LogType::Info => write!(f, "Info"),
             LogType::Waring => write!(f, "Warning"),
@@ -50,11 +53,6 @@ impl Display for LogType {
             LogType::Debug => write!(f, "Debug"),
         }
     }
-}
-
-pub enum CmdOrInt<'a> {
-    Command(&'a Message),
-    Interaction(&'a ApplicationCommandInteraction)
 }
 
 pub enum MsgUpdateLog {
@@ -171,136 +169,122 @@ impl Logger {
         });
     }
 
-    pub fn command(&self, level: LogType, cmd_name: &str, cmd_detail: CmdOrInt<'_>, extra_msg: Option<&str>) {
-        let data = match cmd_detail {
-            CmdOrInt::Command(msg) => {
-                let mut command_args: Vec<&str> = msg.content.split_whitespace().collect();
-                command_args.remove(0); //* Remove the command name from the args vector
+    pub fn command(&self, level: LogType, ctx: &Context<'_, (), Error>, extra_msg: Option<&str>) {
+        let date_now = Utc::now();
 
-                {
-                    let log_message = format!("prefix command | {} => [{} {}] {}", 
-                        msg.author.tag(), 
-                        cmd_name, 
-                        command_args.join(" "), 
-                        match extra_msg {
-                            Some(m) => String::from("=> ") + m,
-                            None => String::new(),
-                        }
-                    );
+        {
+            let log_message = format!("Command ({}) | {} => {:?}",
+                ctx.channel_id(),
+                ctx.author().tag(),
+                ctx.command(),
+            );
 
-                    match &level {
-                        LogType::Info => log::info!("{}", log_message),
-                        LogType::Waring => log::warn!("{}", log_message),
-                        LogType::Error => log::error!("{}", log_message),
-                        LogType::Debug => log::debug!("{}", log_message),
-                    }
-                }
-            
-                let command_author = match msg.author.serialize(Serializer::new()) {
-                    Ok(b) => b,
-                    Err(why) => {
-                        log::error!("[Logger] => bson error: {}", why);
-                        return;
-                    }
-                };
-
-                let date_now = Utc::now();
-
-                let data = doc! {
-                    "logType": level.to_string(),
-                    "author": command_author,
-                    "command": {
-                        "name": cmd_name,
-                        "args": command_args,
-                    },
-                    "message": extra_msg,
-                    "time": DateTime::from_chrono(date_now),
-                };
-
-                data
+            match &level {
+                LogType::Info => log::info!("{}", log_message),
+                LogType::Waring => log::warn!("{}", log_message),
+                LogType::Error => log::error!("{}", log_message),
+                LogType::Debug => log::debug!("{}", log_message),
             }
+        }
 
-            CmdOrInt::Interaction(int) => {
-                {
-                    let log_message = format!("prefix command | {} => [{} | options: {}] => {}", 
-                        int.user.tag(), 
-                        cmd_name, 
-                        &self.format_interaction_options(&int.data.options), 
-                        match extra_msg {
-                            Some(m) => String::from("=> ") + m,
-                            None => String::new(),
-                        }
-                    );
+        let author_id = match ctx.author().id.serialize(Serializer::new()) {
+            Ok(d) => d,
+            Err(_) => Bson::String("SERIALIZER_ERROR".to_string())
+        };
 
-                    match &level {
-                        LogType::Info => log::info!("{}", log_message),
-                        LogType::Waring => log::warn!("{}", log_message),
-                        LogType::Error => log::error!("{}", log_message),
-                        LogType::Debug => log::debug!("{}", log_message),
-                    }
-                }
+        let command_bson = match self.serialise_poise_command(ctx.command()) {
+            Ok(d) => d,
+            Err(_) => Bson::String("SERIALIZER_ERROR".to_string())
+        };
 
-                let command_author = match int.user.serialize(Serializer::new()) {
-                    Ok(b) => b,
-                    Err(why) => {
-                        log::error!("[Logger] => bson error: {}", why);
-                        return;
-                    }
-                };
-
-                let interaction_data = match int.data.serialize(Serializer::new()) {
-                    Ok(b) => b,
-                    Err(why) => {
-                        log::error!("[Logger] => bson error: {}", why);
-                        return;
-                    }
-                };
-
-                let date_now = Utc::now();
-
-                let data = doc! {
-                    "logType": level.to_string(),
-                    "author": command_author,
-                    "command": interaction_data,
-                    "message": extra_msg,
-                    "time": DateTime::from_chrono(date_now),
-                };
-
-                data
-            }
+        let doc_log = doc! {
+            "logType": level.to_string(),
+            "author": author_id,
+            "command": command_bson,
+            "message": extra_msg,
+            "time": DateTime::from_chrono(date_now),
         };
 
         let task_database = Arc::clone(&self.database);
         task::spawn(async move {
-            if let Err(e) = task_database.insert_one("Logger", "commands", data).await {
+            if let Err(e) = task_database.insert_one("Logger", "commands", doc_log).await {
                 log::error!("{}", e);
             };
         });
     }
 
-    fn format_interaction_options(&self, options: &Vec<CommandDataOption>) -> String {
-        let mut return_string = String::new();
-        for option in options {
-
-            let str_value = match &option.value {
-                Some(val) => val.as_str().unwrap_or("!{EMPTY}"),
-                None => "!{EMPTY}",
-            };
-
-            let mut option_string = String::from("(");
-            option_string = option_string + &option.name + ": " + str_value;
-
-            
-
-            if !option.options.is_empty() {
-                option_string = option_string + ", nested options: ";
-                option_string = option_string + &self.format_interaction_options(&option.options);
-            }
-
-            return_string = return_string + &option_string;
+    fn serialise_poise_command(&self, cmd: &Command<(), Error>) -> Result<Bson, Box<dyn StdError>> {
+        let mut subcommand_doc: Vec<Bson> = Vec::new();
+        for scmd in &cmd.subcommands {
+            subcommand_doc.push(self.serialise_poise_command(scmd)?);
         }
 
-        return_string
+        let mut parms_doc: Vec<Bson> = Vec::new();
+        for param in &cmd.parameters {
+            parms_doc.push(self.serialize_poise_command_parameter(param)?);
+        }
+
+        let cmd_doc = doc! {
+            "subcommands": subcommand_doc,
+            "names": {
+                "main_name": &cmd.name,
+                "name_localizations": cmd.name_localizations.serialize(Serializer::new())?,
+                "qualified_name": &cmd.qualified_name,
+                "identifying_name": &cmd.identifying_name,
+                "aliases": cmd.aliases,
+            },
+            "parameters": parms_doc,
+            "category": cmd.category,
+            "descriptions": {
+                "main_description": &cmd.description,
+                "description_localizations": cmd.description_localizations.serialize(Serializer::new())?,
+            },
+            "permissions": {
+                "default_member_permissions": cmd.default_member_permissions.serialize(Serializer::new())?,
+                "required_permissions": cmd.required_permissions.serialize(Serializer::new())?,
+                "required_bot_permissions": cmd.required_bot_permissions.serialize(Serializer::new())?,
+            },
+            "configs": {
+                "hide_in_help": cmd.hide_in_help,
+                "reuse_response": cmd.reuse_response,
+                "owners_only": cmd.owners_only,
+                "guild_only": cmd.guild_only,
+                "dm_only": cmd.dm_only,
+                "nsfw_only": cmd.nsfw_only,
+                "invoke_on_edit": cmd.invoke_on_edit,
+                "track_deletion": cmd.track_deletion,
+                "broadcast_typing": cmd.broadcast_typing,
+                "ephemeral": cmd.ephemeral,
+            },
+        };
+
+        Ok(Bson::Document(cmd_doc))
+    }
+
+    fn serialize_poise_command_parameter(&self, cmd_param: &CommandParameter<(), Error>) -> Result<Bson, Box<dyn StdError>> {
+        let mut choices_doc: Vec<Document> = Vec::new();
+        for choice in &cmd_param.choices {
+            choices_doc.push(doc! {
+                "name": &choice.name,
+                "localizations": choice.localizations.serialize(Serializer::new())?,
+            });
+        }
+
+        let doc_param = doc! { 
+            "names": {
+                "main_name": &cmd_param.name,
+                "name_localizations": cmd_param.name_localizations.serialize(Serializer::new())?,
+            },
+            "descriptions": {
+                "main_description": &cmd_param.description,
+                "description_localizations": cmd_param.description_localizations.serialize(Serializer::new())?,
+            },
+            "required": cmd_param.required,
+            "channel_types": cmd_param.channel_types.serialize(Serializer::new())?,
+            "choices": choices_doc,
+        };
+
+        Ok(Bson::Document(doc_param))
     }
 
     pub fn update_blocklist(&mut self, ids: Vec<u64>) {
