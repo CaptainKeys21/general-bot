@@ -27,7 +27,7 @@ pub fn dynamic_prefix(ctx: PartialContext<'_, (), SerenityError>) -> BoxFuture<'
 
 
         let res = match prefix {
-            Ok(d) => Some(d.data),
+            Ok(d) => Some(d.unwrap_or_default().data),
             Err(_) => None
         };
 

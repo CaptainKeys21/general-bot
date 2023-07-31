@@ -34,7 +34,7 @@ pub struct Handler {
 // Main event handler
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, ctx: Context, ready: Ready) {ready::ready(ctx, ready).await;}
+    async fn ready(&self, ctx: Context, ready: Ready) {ready::ready(ctx, ready, &self.options).await;}
 
     async fn guild_create(&self, ctx: Context, guild: Guild, is_new: bool) {guild_create::guild_create(ctx, guild, is_new).await;}
 

@@ -8,6 +8,10 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
+if [[ "$@" == *"db-only"* ]]; then
+    exit 0
+fi
+
 if [[ "$@" == *"bot"* ]]; then
     docker compose up -d dev-bot
 fi

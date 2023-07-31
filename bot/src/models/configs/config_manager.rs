@@ -31,20 +31,24 @@ impl ConfigManager {
         manager
     }
 
-    pub async fn get_one<C: GeneralBotConfig>(&self, name: &str) -> Result<C::Data, Box<dyn Error>> {
+    pub async fn get_one<C: GeneralBotConfig>(&self, name: &str) -> Result<Option<C::Data>, Box<dyn Error>> {
         let config_key = &self.make_config_key(name, C::TYPE);
 
         let hash_data = self.configs.get(config_key);
 
         let data = match hash_data {
-            Some(data) => from_bson::<C::Data>(data.into())?,
+            Some(data) => Some(from_bson::<C::Data>(data.into())?),
             None => {
                 let filter = doc! {
                     "name": name,
                     "config_type": C::TYPE
                 };
                 let db_data = self.database.get_one::<Document>("GeneralBot", "config", filter, None).await?;
-                from_bson::<C::Data>(db_data.into())?
+
+                match db_data {
+                    Some(d) => Some(from_bson::<C::Data>(d.into())?),
+                    None => None,
+                }
             }
         };
 

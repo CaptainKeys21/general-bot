@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 use serenity::prelude::{RwLock, TypeMap};
 
-use crate::{cache::ConfigManagerCache};
+use crate::cache::ConfigManagerCache;
 
 
 #[derive(Serialize)]

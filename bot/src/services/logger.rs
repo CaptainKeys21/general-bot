@@ -62,7 +62,7 @@ pub enum MsgUpdateLog {
 
 pub struct Logger {
     database: Arc<Mongodb>,
-    blocked_ids: Vec<u64>
+    blocked_ids: Vec<String>
 }
 
 impl Logger {
@@ -287,29 +287,30 @@ impl Logger {
         Ok(Bson::Document(doc_param))
     }
 
-    pub fn update_blocklist(&mut self, ids: Vec<u64>) {
-        self.blocked_ids.extend(ids.iter());
+    pub fn update_blocklist(&mut self, ids: Vec<String>) {
+        self.blocked_ids.extend(ids);
         self.blocked_ids.sort();
         self.blocked_ids.dedup();
     }
 
     fn check_blocked_ids(&self, user: &User, member: &Option<PartialMember>) -> bool {
-        let mut ids: Vec<u64> = Vec::new();
+        let mut ids: Vec<String> = Vec::new();
 
-        ids.push(user.id.0);
+        ids.push(user.id.0.to_string());
   
         if let Some(m) = member {
             for role_id in &m.roles {
-                ids.push(role_id.0);
+                ids.push(role_id.0.to_string());
             }
         };
-
+        
+        let mut ok = false;
         for id in &self.blocked_ids {
             if ids.contains(id) {
-                return true;
+                ok = true;
             }
         }
 
-        false
+        ok
     }
 }

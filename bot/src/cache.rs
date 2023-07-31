@@ -63,7 +63,7 @@ pub async fn fill(
             let c_manager = cfg_mngr.read().await;
 
             if let Ok(block_list) = c_manager.get_one::<LoggerBlocklist>(LoggerBlocklist::NAME).await {
-                logger.update_blocklist(block_list.get_all_ids());
+                logger.update_blocklist(block_list.unwrap_or_default().get_all_ids());
             };
         }
     }
