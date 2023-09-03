@@ -21,15 +21,12 @@ use serenity::{
         gateway::Ready,
     },
     prelude::*,
-    
 };
 
 // Event handler from serenity
 pub struct Handler {
     pub options: poise::FrameworkOptions<(), Error>
 }
-
-
 
 // Main event handler
 #[async_trait]
@@ -52,8 +49,6 @@ impl EventHandler for Handler {
 
     async fn message_delete_bulk(&self, ctx: Context, channel_id: ChannelId, deleted_message_ids: Vec<MessageId>, guild_id: Option<GuildId>) {message_delete_bulk::message_delete_bulk(ctx, channel_id, deleted_message_ids, guild_id).await;}
 }
-
-
 
 
 

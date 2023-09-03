@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use bson::doc;
 
 use axum::{
@@ -7,9 +6,8 @@ use axum::{
     Json
 };
 use serde::{Deserialize, Serialize};
-use serenity::prelude::{RwLock, TypeMap};
 
-use crate::{cache::ConfigManagerCache, models::{configs::logger_blocklist::{LoggerBlocklist, Blocked}, traits::GeneralBotConfig}};
+use crate::{cache::ConfigManagerCache, models::{configs::logger_blocklist::{LoggerBlocklist, Blocked}, traits::GeneralBotConfig}, api::router::RouterData};
 
 
 #[derive(Deserialize)]
@@ -22,8 +20,8 @@ pub struct ResBody {
     msg: String,
 }
 
-pub async fn set_blocklist(State(data): State<Arc<RwLock<TypeMap>>>, Json(payload): Json<ReqBlocklist>) -> (StatusCode, Json<ResBody>) {
-    let map = data.read().await;
+pub async fn set_blocklist(State(state): State<RouterData>, Json(payload): Json<ReqBlocklist>) -> (StatusCode, Json<ResBody>) {
+    let map = state.bot_data.read().await;
     let mut cfg_manager = match map.get::<ConfigManagerCache>() {
         Some(cfg_mngr) => cfg_mngr.write().await,
         None => {

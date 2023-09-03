@@ -1,4 +1,4 @@
-use std::{sync::Arc, collections::HashMap};
+use std::collections::HashMap;
 use bson::{doc, Document};
 
 use axum::{
@@ -7,9 +7,8 @@ use axum::{
     Json
 };
 use serde::Serialize;
-use serenity::prelude::{RwLock, TypeMap};
 
-use crate::cache::ConfigManagerCache;
+use crate::{cache::ConfigManagerCache, api::router::RouterData};
 
 
 #[derive(Serialize)]
@@ -18,8 +17,8 @@ pub struct ResBody {
     data: Option<HashMap<String, Document>>
 }
 
-pub async fn get_configs(State(data): State<Arc<RwLock<TypeMap>>>) -> (StatusCode, Json<ResBody>) {
-    let map = data.read().await;
+pub async fn get_configs(State(state): State<RouterData>) -> (StatusCode, Json<ResBody>) {
+    let map = state.bot_data.read().await;
     let cfg_manager = match map.get::<ConfigManagerCache>() {
         Some(cfg_mngr) => cfg_mngr.read().await,
         None => {

@@ -1,5 +1,5 @@
 use urlencoding::encode;
-use futures::{StreamExt};
+use futures::StreamExt;
 use mongodb::{
     bson::{Document, doc},
     error:: Error,

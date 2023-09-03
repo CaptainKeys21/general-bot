@@ -83,7 +83,7 @@ impl ConfigManager {
                             Err(_) => continue,
                         };
 
-                        fetched_data.insert(key.clone(), data_struct);
+                        fetched_data.insert(self.get_config_name_from_key(&key), data_struct);
                     }
                 }
             }
@@ -145,5 +145,10 @@ impl ConfigManager {
     fn check_type_in_config_key(&self, config_key: &str, config_type: &str) -> bool {
         let ck_vec: Vec<&str> = config_key.split(":").collect();
         ck_vec[ck_vec.len() -1] == config_type
+    }
+
+    fn get_config_name_from_key(&self, config_key: &str) -> String {
+        let ck_vec: Vec<&str> = config_key.split(":").collect();
+        String::from(ck_vec[0])
     }
 }

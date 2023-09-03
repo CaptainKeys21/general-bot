@@ -1,9 +1,15 @@
+use mongodb::options::FindOneOptions;
 use serde::{Deserialize, Serialize};
-use serenity::prelude::Context;
-use bson::Serializer;
+use serenity::{
+    prelude::Context,
+    model::guild::Role,
+};
+use bson::{Serializer, doc};
 use std::error::Error;
 
-use crate::cache::DatabaseCache;
+use crate::{cache::DatabaseCache, services::mongodb::Mongodb};
+
+use super::context::ContextDataGetters;
 
 #[derive(Deserialize, Serialize)]
 pub struct BotRoles;
@@ -37,5 +43,19 @@ impl BotRoles {
         database.insert_many("GeneralBot", "roles", roles).await?;
 
         Ok(())
+    }
+
+    pub async fn get_top_role_from_list(database: &Mongodb, ids: Vec<String>) -> Result<Option<Role>, Box<dyn Error>> {
+        let filter = doc! {
+            "id": { 
+                "$in": ids
+            }
+        };
+
+        let options = FindOneOptions::builder().sort(doc! { "position": -1 }).build();
+
+        let result = database.get_one::<Role>("GeneralBot", "roles", filter, Some(options)).await?;
+
+        Ok(result)
     }
 }

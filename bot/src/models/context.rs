@@ -53,6 +53,7 @@ impl ContextDataGetters for TypeMap {
     }
 
     async fn get_timezone(&self) -> Result<FixedOffset, Error> {
+        let res_logger = self.get_essentials().await;
         let cfg_mngr = match self.get::<ConfigManagerCache>() {
             Some(res) => res.read().await,
             None => return Err(Error::Other("Config Managaer not found"))
@@ -74,6 +75,9 @@ impl ContextDataGetters for TypeMap {
                 (h1, h2)
             }
             Err(e) => {
+                if let Ok((_, logger)) = res_logger {
+                    logger.default(crate::services::logger::LogType::Error, &format!("Get Timezone | {:?}", e));
+                };
                 (String::from("W"), 0)
             }
         };

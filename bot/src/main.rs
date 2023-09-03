@@ -6,7 +6,7 @@ mod utils;
 mod models;
 mod api;
 
-use api::router::build_router;
+use api::router::{build_router, RouterData};
 use models::configs::general::GeneralConfig;
 use poise::PrefixFrameworkOptions;
 use serenity::{
@@ -91,11 +91,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         post_command,
         owners,
         prefix_options,
-        command_check: Some(command_check), 
+        command_check: Some(command_check),
         ..Default::default()
       }  
     };
     poise::set_qualified_names(&mut handler.options.commands);
+    
     // Cliente builder
     let mut client = serenity::Client::builder(token, intents)
         .event_handler_arc(Arc::new(handler))
@@ -104,6 +105,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
 
     let client_data = client.data.clone();
+
     // Storing some data in memory
     cache::fill(
         client_data.clone(), 
@@ -113,8 +115,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ).await?;
 
     tokio::task::spawn(async move {
+        let router_data = RouterData {
+            bot_data: client_data.clone(),
+        };
+
         // build our application with a route
-        let app = build_router(client_data.clone());
+        let app = build_router(router_data);
 
         // run our app with hyper
         // `axum::Server` is a re-export of `hyper::Server`

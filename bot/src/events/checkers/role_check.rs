@@ -27,8 +27,8 @@ pub async fn role_check(ctx: Context<'_, (), Error>) -> Result<bool, Error> {
         Ok(c) => c.unwrap_or_default(),
         Err(e) => {
             logger.default(LogType::Error, &format!("Role Check | {}", e));
-
-            CmdAllowedIds::default()
+            
+            return Err(Error::Other("Check Error"));
         }
     }; 
 

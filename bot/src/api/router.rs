@@ -17,7 +17,12 @@ use crate::api::routes::{
     timezone::set_timezone
 };
 
-pub fn build_router(data: Arc<RwLock<TypeMap>>) -> Router {
+#[derive(Clone)]
+pub struct RouterData {
+    pub bot_data: Arc<RwLock<TypeMap>>
+}
+
+pub fn build_router(data: RouterData) -> Router {
     let router = Router::new()
         .route("/api/", get(root))
         .route("/api/configs", get(get_configs))
