@@ -59,9 +59,10 @@ services:
     depends_on:
       - db
     build: ./bot/
+    image: general-bot-main:production
     restart: always
-    volumes:
-      - ./bot:/usr/src/bot
+    ports:
+      - 8080:8080
     env_file:
       - ./config/bot.env
 
